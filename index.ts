@@ -25,6 +25,7 @@ const CONFIG = {
   // iPhone frame configuration
   frameConfig: {
     framePath: path.join(__dirname, 'iphone-frame_Edited.png'), // Path to your transparent iPhone frame
+    androidFramePath: path.join(__dirname, 'android_frame.png'),
     // Screen area within the frame (adjust these values based on your frame)
     screenArea: {
       x: 50, // X offset from left edge of frame
@@ -69,56 +70,101 @@ const sanitizeUrl = (url: string): string => {
 };
 
 const compositeWithFrame = async (
-  finalScreenshotPath: string
-): Promise<string> => {
-  const { framePath } = CONFIG.frameConfig;
+    finalScreenshotPath: string): Promise<string> => {
+  const  framePath  = CONFIG.frameConfig.framePath;
   const outputPath = finalScreenshotPath.replace('.png', '_framed.png');
 
   try {
-    // Check if frame file exists
     if (!fs.existsSync(framePath)) {
       throw new Error(`iPhone frame not found at: ${framePath}`);
     }
 
-    // Get screenshot dimensions first
+    // Get screenshot dimensions
     const screenshot = sharp(finalScreenshotPath);
     const screenshotMetadata = await screenshot.metadata();
     if (!screenshotMetadata.width || !screenshotMetadata.height) {
       throw new Error('Could not read screenshot dimensions');
     }
 
-    // Resize the frame to match screenshot dimensions
-    // const resizedFrame = await sharp(framePath)
-    //   .resize(screenshotMetadata.width, screenshotMetadata.height)
-    //   .toBuffer();
-    // Calculate new dimensions (reduce height by 5% to show bottom buttons)
-    const reducedHeight = Math.floor(screenshotMetadata.height * 0.99); // Reduce height by 5%
-    const aspectRatio = screenshotMetadata.width / screenshotMetadata.height;
-    const newWidth = Math.floor(reducedHeight * aspectRatio);
+    // Calculate dimensions to maintain target aspect ratio
+    const targetWidth = CONFIG.targetDimensions.width;
+    const targetHeight = CONFIG.targetDimensions.height;
+
+    // Calculate scaling factor to fit screenshot within frame
+    const scale = 0.9; // Adjust this value (0-1) to control how much of the frame is filled
+    const scaledWidth = Math.floor(targetWidth * scale);
+    const scaledHeight = Math.floor(targetHeight * scale);
+
+    // Create rounded corners mask
+    const roundedCorners = Buffer.from(
+      `<svg width="${scaledWidth}" height="${scaledHeight}">
+        <rect 
+          x="0" 
+          y="0" 
+          width="${scaledWidth}" 
+          height="${scaledHeight}" 
+          rx="60" 
+          ry="60" 
+          fill="#fff"
+        />
+      </svg>`
+    );
+
+    // Apply rounded corners to the screenshot
+    const roundedScreenshot = await sharp(finalScreenshotPath)
+      .resize(scaledWidth, scaledHeight, {
+        fit: 'cover',
+        position: 'center'
+      })
+      .composite([{
+        input: roundedCorners,
+        blend: 'dest-in'
+      }])
+      .toBuffer();
+
+    // Create a transparent background with target dimensions
+    const background = await sharp({
+      create: {
+        width: targetWidth,
+        height: targetHeight,
+        channels: 4,
+        background: { r: 0, g: 0, b: 0, alpha: 0 }
+      }
+    }).png().toBuffer();
+
+    // Calculate position to center the screenshot within the frame
+    const left = Math.floor((targetWidth - scaledWidth) / 2);
+    const top = Math.floor((targetHeight - scaledHeight) / 2);
+
+    // Composite the screenshot onto the transparent background
+    const screenshotWithBg = await sharp(background)
+      .composite([{
+        input: roundedScreenshot,
+        left,
+        top
+      }])
+      .toBuffer();
+
+    // Resize the frame to match target dimensions
     const resizedFrame = await sharp(framePath)
-      .resize(newWidth, reducedHeight, {
-        fit: 'contain',
+      .resize(targetWidth, (targetHeight - 110), {
+        fit: 'fill',
         background: { r: 0, g: 0, b: 0, alpha: 0 }
       })
       .toBuffer();
 
-    log(`Resizing frame to match screenshot: ${screenshotMetadata.width}x${screenshotMetadata.height}`, 'info');
-
-    // Create the final composite with resized frame on top of the screenshot
-    await sharp(finalScreenshotPath)
-      .composite([
-        {
-          input: resizedFrame,
-          blend: 'over'
-        }
-      ])
+    // Composite the frame on top of the screenshot
+    await sharp(screenshotWithBg)
+      .composite([{
+        input: resizedFrame,
+        blend: 'over'
+      }])
       .toFile(outputPath);
 
-    log(`Successfully composited screenshot with resized frame at: ${outputPath}`, 'success');
+    log(`Successfully composited screenshot with frame at: ${outputPath}`, 'success');
     return outputPath;
   } catch (error) {
     log(`Error in compositeWithFrame: ${error}`, 'error');
-    // Return original path if composition fails
     return finalScreenshotPath;
   }
 }
@@ -296,6 +342,106 @@ const compositeWithFrame = async (
 // };
 
 
+const compositeWithFrameAndroind = async (
+    finalScreenshotPath: string): Promise<string> => {
+  const  framePath  = CONFIG.frameConfig.androidFramePath;
+  const outputPath = finalScreenshotPath.replace('.png', '_framed_android.png');
+
+  try {
+    if (!fs.existsSync(framePath)) {
+      throw new Error(`iPhone frame not found at: ${framePath}`);
+    }
+
+    // Get screenshot dimensions
+    const screenshot = sharp(finalScreenshotPath);
+    const screenshotMetadata = await screenshot.metadata();
+    if (!screenshotMetadata.width || !screenshotMetadata.height) {
+      throw new Error('Could not read screenshot dimensions');
+    }
+
+    // Calculate dimensions to maintain target aspect ratio
+    const targetWidth = CONFIG.targetDimensions.width;
+    const targetHeight = CONFIG.targetDimensions.height;
+
+    // Calculate scaling factor to fit screenshot within frame
+    const scale = 0.9; // Adjust this value (0-1) to control how much of the frame is filled
+    const scaledWidth = Math.floor(targetWidth * scale);
+    const scaledHeight = Math.floor(targetHeight * scale);
+
+    // Create rounded corners mask
+    const roundedCorners = Buffer.from(
+      `<svg width="${scaledWidth}" height="${scaledHeight}">
+        <rect 
+          x="0" 
+          y="0" 
+          width="${scaledWidth}" 
+          height="${scaledHeight}" 
+          rx="60" 
+          ry="60" 
+          fill="#fff"
+        />
+      </svg>`
+    );
+
+    // Apply rounded corners to the screenshot
+    const roundedScreenshot = await sharp(finalScreenshotPath)
+      .resize(scaledWidth, scaledHeight, {
+        fit: 'cover',
+        position: 'center'
+      })
+      .composite([{
+        input: roundedCorners,
+        blend: 'dest-in'
+      }])
+      .toBuffer();
+
+    // Create a transparent background with target dimensions
+    const background = await sharp({
+      create: {
+        width: targetWidth,
+        height: targetHeight,
+        channels: 4,
+        background: { r: 0, g: 0, b: 0, alpha: 0 }
+      }
+    }).png().toBuffer();
+
+    // Calculate position to center the screenshot within the frame
+    const left = Math.floor((targetWidth - scaledWidth) / 2);
+    const top = Math.floor((targetHeight - scaledHeight) / 2);
+
+    // Composite the screenshot onto the transparent background
+    const screenshotWithBg = await sharp(background)
+      .composite([{
+        input: roundedScreenshot,
+        left,
+        top
+      }])
+      .toBuffer();
+
+    // Resize the frame to match target dimensions
+    const resizedFrame = await sharp(framePath)
+      .resize(targetWidth, targetHeight, {
+        fit: 'contain',
+        background: { r: 0, g: 0, b: 0, alpha: 0 }
+      })
+      .toBuffer();
+
+    // Composite the frame on top of the screenshot
+    await sharp(screenshotWithBg)
+      .composite([{
+        input: resizedFrame,
+        blend: 'over'
+      }])
+      .toFile(outputPath);
+
+    log(`Successfully composited screenshot with frame at: ${outputPath}`, 'success');
+    return outputPath;
+  } catch (error) {
+    log(`Error in compositeWithFrame: ${error}`, 'error');
+    return finalScreenshotPath;
+  }
+}
+
 const takeScreenshot2 = async (
   url: string
 ): Promise<{ success: boolean; message: string }> => {
@@ -418,14 +564,23 @@ const takeScreenshot2 = async (
 
     const framedImagePath = await compositeWithFrame(finalScreenshotPath);
 
+   // const framedImagePathAndroid = await compositeWithFrameAndroind(finalScreenshotPath);
+
     if (fs.existsSync(tempScreenshotPath)) {
       fs.unlinkSync(tempScreenshotPath);
+    }
+
+    if(fs.existsSync(finalScreenshotPath)) {
+      fs.unlinkSync(finalScreenshotPath);
     }
 
     const successMessage = `Screenshot saved to ${framedImagePath.replace(
       process.cwd(),
       '.'
     )}`;
+
+
+
     log(successMessage, 'success');
     return { success: true, message: successMessage };
   } catch (error) {
