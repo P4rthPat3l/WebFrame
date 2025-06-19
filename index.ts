@@ -5,13 +5,10 @@ import { fileURLToPath } from 'url';
 import chalk from 'chalk';
 import sharp from 'sharp';
 
-// Get the current directory in ES module
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Configuration
 const CONFIG = {
-  // iPhone 14 Pro Max viewport
   mobileViewport: {
     width: 430,
     height: 932,
@@ -21,19 +18,16 @@ const CONFIG = {
     userAgent:
       'Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1',
   },
-  // Target dimensions for final image
   targetDimensions: {
     width: 1080,
     height: 2400,
   },
   outputDir: path.join(__dirname, 'screenshots'),
-  timeout: 60000, // 60 seconds timeout for page load
+  timeout: 60000,
 };
 
-// Create output directory if it doesn't exist
 fs.ensureDirSync(CONFIG.outputDir);
 
-// Simplified log function that only logs to console
 const log = (
   message: string,
   type: 'info' | 'success' | 'error' | 'warning' = 'info'
@@ -41,7 +35,6 @@ const log = (
   const timestamp = new Date().toLocaleTimeString();
   const logMessage = `[${timestamp}] ${type.toUpperCase()}: ${message}`;
 
-  // Log to console with colors
   switch (type) {
     case 'success':
       console.log(chalk.green(logMessage));
@@ -57,7 +50,6 @@ const log = (
   }
 };
 
-// Function to sanitize URL for directory name
 const sanitizeUrl = (url: string): string => {
   return url
     .replace(/^https?:\/\//, '')
@@ -65,7 +57,6 @@ const sanitizeUrl = (url: string): string => {
     .toLowerCase();
 };
 
-// Function to take screenshot of a single URL
 const takeScreenshot = async (
   url: string
 ): Promise<{ success: boolean; message: string }> => {
@@ -82,7 +73,6 @@ const takeScreenshot = async (
 
     const page = await browser.newPage();
 
-    // Set mobile viewport and user agent
     await page.setUserAgent(CONFIG.mobileViewport.userAgent);
     await page.setViewport({
       width: CONFIG.mobileViewport.width,
@@ -92,9 +82,7 @@ const takeScreenshot = async (
       hasTouch: CONFIG.mobileViewport.hasTouch,
     });
 
-    // Force mobile viewport meta tag and fix viewport height
     await page.evaluateOnNewDocument(() => {
-      // Set viewport meta tag
       let viewport = document.querySelector('meta[name=viewport]');
       if (!viewport) {
         viewport = document.createElement('meta');
@@ -106,7 +94,6 @@ const takeScreenshot = async (
         'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no'
       );
 
-      // Add CSS to ensure proper viewport height
       const style = document.createElement('style');
       style.textContent = `
         html, body {
@@ -138,7 +125,6 @@ const takeScreenshot = async (
       timeout: CONFIG.timeout,
     });
 
-    // Skip HTTP status check for specific domains
     const skipStatusCheckDomains = ['local.sparissimo.world'];
     const shouldSkipStatusCheck = skipStatusCheckDomains.some((domain) =>
       url.includes(domain)
@@ -154,17 +140,26 @@ const takeScreenshot = async (
       }
     }
 
-    // Create a directory for this website
-    const siteDir = path.join(CONFIG.outputDir, sanitizeUrl(url));
-    fs.ensureDirSync(siteDir);
+    const getDomainFromUrl = (url: string): string => {
+      try {
+        const domain = new URL(url).hostname;
+        return domain
+          .replace(/^www\./, '')
+          .replace(/[^a-z0-9]/gi, '-')
+          .toLowerCase();
+      } catch {
+        return 'screenshot';
+      }
+    };
 
-    // Generate a clean filename
-    const screenshotName = 'screenshot.png';
-    const tempScreenshotPath = path.join(siteDir, 'temp_screenshot.png');
-    const finalScreenshotPath = path.join(siteDir, screenshotName);
+    const screenshotName = `${getDomainFromUrl(url)}.png`;
+    const tempScreenshotPath = path.join(
+      CONFIG.outputDir,
+      `temp_${screenshotName}`
+    );
+    const finalScreenshotPath = path.join(CONFIG.outputDir, screenshotName);
     tempImagePath = tempScreenshotPath;
 
-    // Take screenshot of the full page
     await page.screenshot({
       path: tempScreenshotPath,
       fullPage: true,
@@ -172,7 +167,6 @@ const takeScreenshot = async (
       fromSurface: true,
     });
 
-    // Resize the image to target dimensions
     await sharp(tempScreenshotPath)
       .resize({
         width: CONFIG.targetDimensions.width,
@@ -182,7 +176,6 @@ const takeScreenshot = async (
       })
       .toFile(finalScreenshotPath);
 
-    // Remove temporary file if it exists
     if (fs.existsSync(tempScreenshotPath)) {
       fs.unlinkSync(tempScreenshotPath);
     }
@@ -194,7 +187,6 @@ const takeScreenshot = async (
     log(successMessage, 'success');
     return { success: true, message: successMessage };
   } catch (error) {
-    // Clean up temp file if it exists
     if (tempImagePath && fs.existsSync(tempImagePath)) {
       fs.unlinkSync(tempImagePath);
     }
@@ -212,9 +204,7 @@ const takeScreenshot = async (
   }
 };
 
-// Main function to process multiple URLs
 const main = async () => {
-  // Check if URLs are provided as command line arguments
   const urls = process.argv.slice(2);
 
   if (urls.length === 0) {
@@ -229,7 +219,6 @@ const main = async () => {
   let successCount = 0;
   let failureCount = 0;
 
-  // Process URLs sequentially
   for (const url of urls) {
     log(`\nProcessing URL: ${url}`, 'info');
     const result = await takeScreenshot(url);
@@ -242,7 +231,6 @@ const main = async () => {
     }
   }
 
-  // Generate summary
   const summary = `\n=== Screenshot Capture Summary ===
 Total URLs processed: ${urls.length}
 Successful: ${successCount}
@@ -258,17 +246,14 @@ Failed: ${failureCount}
       : 'warning'
   );
 
-  // Exit with appropriate status code
   process.exit(failureCount === 0 ? 0 : 1);
 };
 
-// Handle unhandled promise rejections
 process.on('unhandledRejection', (reason, promise) => {
   log(`Unhandled Rejection at: ${promise}, reason: ${reason}`, 'error');
   process.exit(1);
 });
 
-// Run the main function
 main().catch((error) => {
   log(`Uncaught exception: ${error}`, 'error');
   process.exit(1);
