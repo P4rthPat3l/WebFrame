@@ -11,15 +11,15 @@ const __dirname = path.dirname(__filename);
 
 // Configuration
 const CONFIG = {
-  // Standard mobile device (iPhone 13 Pro)
+  // iPhone 14 Pro Max viewport
   mobileViewport: {
-    width: 390,
-    height: 844,
+    width: 430,
+    height: 932,
     deviceScaleFactor: 3,
     isMobile: true,
     hasTouch: true,
     userAgent:
-      'Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Mobile/15E148 Safari/604.1',
+      'Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1',
   },
   // Target dimensions for final image
   targetDimensions: {
