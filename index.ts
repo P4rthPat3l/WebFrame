@@ -112,35 +112,34 @@ const compositeWithFrame = async (
       Math.floor(screenArea.y + (screenArea.height - targetHeight) / 2)
     );
 
-    // Create a blank canvas with frame dimensions
-    const canvas = sharp({
+    // Composite the screenshot and frame with frame on top
+    await sharp({
       create: {
         width: frameMetadata.width,
         height: frameMetadata.height,
         channels: 4,
         background: { r: 0, g: 0, b: 0, alpha: 0 },
       },
-    });
-
-    // Resize screenshot
-    const resizedScreenshot = await sharp(screenshotPath)
-      .resize(targetWidth, targetHeight, {
-        fit: 'cover',
-        position: 'top',
-      })
-      .toBuffer();
-
-    // Composite the screenshot and frame
-    await canvas
+    })
       .composite([
+        // First add the resized screenshot
         {
-          input: resizedScreenshot,
+          input: await sharp(screenshotPath)
+            .resize(targetWidth, targetHeight, {
+              fit: 'cover',
+              position: 'top',
+            })
+            .toBuffer(),
           left,
           top,
         },
+        // Then add the frame on top
         {
-          input: framePath, // Use frame as overlay
+          input: framePath,
           blend: 'over',
+          gravity: 'northwest',
+          top: 0,
+          left: 0,
         },
       ])
       .toFile(outputPath);
