@@ -146,24 +146,13 @@ const takeScreenshot = async (
       throw new Error(`HTTP ${response.status()}: ${response.statusText()}`);
     }
 
-    // Create a directory for this website with date
-    const today = new Date().toISOString().split('T')[0];
-    const siteDir = path.join(
-      CONFIG.outputDir,
-      sanitizeUrl(url),
-      today // Add date-based subfolder
-    );
+    // Create a directory for this website
+    const siteDir = path.join(CONFIG.outputDir, sanitizeUrl(url));
     fs.ensureDirSync(siteDir);
 
-    // Generate a clean filename with timestamp
-    const timeStr = new Date()
-      .toISOString()
-      .replace(/[:.]/g, '-')
-      .replace('T', '_')
-      .slice(0, 19);
-
-    const screenshotName = `screenshot_${timeStr}.png`;
-    const tempScreenshotPath = path.join(siteDir, `temp_${screenshotName}`);
+    // Generate a clean filename
+    const screenshotName = 'screenshot.png';
+    const tempScreenshotPath = path.join(siteDir, 'temp_screenshot.png');
     const finalScreenshotPath = path.join(siteDir, screenshotName);
     tempImagePath = tempScreenshotPath;
 
@@ -188,25 +177,6 @@ const takeScreenshot = async (
     // Remove temporary file if it exists
     if (fs.existsSync(tempScreenshotPath)) {
       fs.unlinkSync(tempScreenshotPath);
-    }
-
-    // Clean up old screenshots (keep last 5)
-    try {
-      const files = fs
-        .readdirSync(siteDir)
-        .filter(
-          (file) => file.endsWith('.png') && file.startsWith('screenshot_')
-        )
-        .sort()
-        .reverse();
-
-      if (files.length > 5) {
-        for (const file of files.slice(5)) {
-          fs.unlinkSync(path.join(siteDir, file));
-        }
-      }
-    } catch (cleanupError) {
-      console.warn('Could not clean up old screenshots:', cleanupError);
     }
 
     const successMessage = `Screenshot saved to ${finalScreenshotPath.replace(
