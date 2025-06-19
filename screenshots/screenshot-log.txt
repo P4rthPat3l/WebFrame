@@ -1,0 +1,129 @@
+[2025-06-19T09:05:29.831Z] [INFO] Starting to process 1 URLs...
+[2025-06-19T09:05:29.831Z] [INFO] 
+Processing URL: https://www.google.com/
+[2025-06-19T09:05:29.832Z] [INFO] Starting browser for https://www.google.com/
+[2025-06-19T09:05:29.839Z] [ERROR] Error capturing https://www.google.com/: Could not find Chrome (ver. 137.0.7151.119). This can occur if either
+ 1. you did not perform an installation before running the script (e.g. `npx puppeteer browsers install chrome`) or
+ 2. your cache path is incorrectly configured (which is: /home/parth/.cache/puppeteer).
+For (2), check out our guide on configuring puppeteer at https://pptr.dev/guides/configuration.
+[2025-06-19T09:05:29.840Z] [ERROR] 
+=== Screenshot Capture Summary ===
+Total URLs processed: 1
+Successful: 0
+Failed: 1
+Log file: /home/parth/projects/Puppeteer-screenshort/screenshots/screenshot-log.txt
+================================
+[2025-06-19T09:08:29.517Z] [INFO] Starting to process 1 URLs...
+[2025-06-19T09:08:29.517Z] [INFO] 
+Processing URL: https://www.google.com/
+[2025-06-19T09:08:29.518Z] [INFO] Starting browser for https://www.google.com/
+[2025-06-19T09:08:29.523Z] [ERROR] Error capturing https://www.google.com/: Could not find Chrome (ver. 137.0.7151.119). This can occur if either
+ 1. you did not perform an installation before running the script (e.g. `npx puppeteer browsers install chrome-headless-shell`) or
+ 2. your cache path is incorrectly configured (which is: /home/parth/.cache/puppeteer).
+For (2), check out our guide on configuring puppeteer at https://pptr.dev/guides/configuration.
+[2025-06-19T09:08:29.523Z] [ERROR] 
+=== Screenshot Capture Summary ===
+Total URLs processed: 1
+Successful: 0
+Failed: 1
+Log file: /home/parth/projects/Puppeteer-screenshort/screenshots/screenshot-log.txt
+================================
+[2025-06-19T09:14:13.334Z] [INFO] Starting to process 1 URLs...
+[2025-06-19T09:14:13.334Z] [INFO] 
+Processing URL: https://www.google.com/
+[2025-06-19T09:14:13.334Z] [INFO] Starting browser for https://www.google.com/
+[2025-06-19T09:14:13.339Z] [ERROR] Error capturing https://www.google.com/: Could not find Chrome (ver. 137.0.7151.119). This can occur if either
+ 1. you did not perform an installation before running the script (e.g. `npx puppeteer browsers install chrome-headless-shell`) or
+ 2. your cache path is incorrectly configured (which is: /home/parth/.cache/puppeteer).
+For (2), check out our guide on configuring puppeteer at https://pptr.dev/guides/configuration.
+[2025-06-19T09:14:13.339Z] [ERROR] 
+=== Screenshot Capture Summary ===
+Total URLs processed: 1
+Successful: 0
+Failed: 1
+Log file: /home/parth/projects/Puppeteer-screenshort/screenshots/screenshot-log.txt
+================================
+[2025-06-19T09:15:05.926Z] [ERROR] Please provide at least one URL as a command-line argument.
+[2025-06-19T09:15:05.927Z] [INFO] Example: bun start https://example.com https://example.org
+[2025-06-19T09:15:17.195Z] [INFO] Starting to process 2 URLs...
+[2025-06-19T09:15:17.195Z] [INFO] 
+Processing URL: https://example.com
+[2025-06-19T09:15:17.195Z] [INFO] Starting browser for https://example.com
+[2025-06-19T09:15:17.197Z] [ERROR] Error capturing https://example.com: Could not find Chrome (ver. 137.0.7151.119). This can occur if either
+ 1. you did not perform an installation before running the script (e.g. `npx puppeteer browsers install chrome-headless-shell`) or
+ 2. your cache path is incorrectly configured (which is: /home/parth/.cache/puppeteer).
+For (2), check out our guide on configuring puppeteer at https://pptr.dev/guides/configuration.
+[2025-06-19T09:15:17.197Z] [INFO] 
+Processing URL: https://google.com
+[2025-06-19T09:15:17.197Z] [INFO] Starting browser for https://google.com
+[2025-06-19T09:15:17.201Z] [ERROR] Error capturing https://google.com: Could not find Chrome (ver. 137.0.7151.119). This can occur if either
+ 1. you did not perform an installation before running the script (e.g. `npx puppeteer browsers install chrome-headless-shell`) or
+ 2. your cache path is incorrectly configured (which is: /home/parth/.cache/puppeteer).
+For (2), check out our guide on configuring puppeteer at https://pptr.dev/guides/configuration.
+[2025-06-19T09:15:17.201Z] [ERROR] 
+=== Screenshot Capture Summary ===
+Total URLs processed: 2
+Successful: 0
+Failed: 2
+Log file: /home/parth/projects/Puppeteer-screenshort/screenshots/screenshot-log.txt
+================================
+[2025-06-19T09:38:22.646Z] [ERROR] Please provide at least one URL as a command-line argument.
+[2025-06-19T09:38:22.647Z] [INFO] Example: bun start https://example.com https://example.org
+[2025-06-19T09:39:20.069Z] [INFO] Starting to process 1 URLs...
+[2025-06-19T09:39:20.069Z] [INFO] 
+Processing URL: https://pptr.dev/guides/system-requirements
+[2025-06-19T09:39:20.069Z] [INFO] Starting browser for https://pptr.dev/guides/system-requirements
+[2025-06-19T09:39:20.072Z] [ERROR] Error capturing https://pptr.dev/guides/system-requirements: Could not find Chrome (ver. 137.0.7151.119). This can occur if either
+ 1. you did not perform an installation before running the script (e.g. `npx puppeteer browsers install chrome-headless-shell`) or
+ 2. your cache path is incorrectly configured (which is: /home/parth/.cache/puppeteer).
+For (2), check out our guide on configuring puppeteer at https://pptr.dev/guides/configuration.
+[2025-06-19T09:39:20.073Z] [ERROR] 
+=== Screenshot Capture Summary ===
+Total URLs processed: 1
+Successful: 0
+Failed: 1
+Log file: /home/parth/projects/Puppeteer-screenshort/screenshots/screenshot-log.txt
+================================
+[2025-06-19T09:41:09.817Z] [INFO] Starting to process 1 URLs...
+[2025-06-19T09:41:09.817Z] [INFO] 
+Processing URL: https://pptr.dev/guides/system-requirements
+[2025-06-19T09:41:09.818Z] [INFO] Starting browser for https://pptr.dev/guides/system-requirements
+[2025-06-19T09:41:09.820Z] [ERROR] Error capturing https://pptr.dev/guides/system-requirements: Could not find Chrome (ver. 137.0.7151.119). This can occur if either
+ 1. you did not perform an installation before running the script (e.g. `npx puppeteer browsers install chrome`) or
+ 2. your cache path is incorrectly configured (which is: /home/parth/.cache/puppeteer).
+For (2), check out our guide on configuring puppeteer at https://pptr.dev/guides/configuration.
+[2025-06-19T09:41:09.820Z] [ERROR] 
+=== Screenshot Capture Summary ===
+Total URLs processed: 1
+Successful: 0
+Failed: 1
+Log file: /home/parth/projects/Puppeteer-screenshort/screenshots/screenshot-log.txt
+================================
+[2025-06-19T09:43:07.958Z] [INFO] Starting to process 1 URLs...
+[2025-06-19T09:43:07.958Z] [INFO] 
+Processing URL: https://pptr.dev/guides/system-requirements
+[2025-06-19T09:43:07.958Z] [INFO] Starting browser for https://pptr.dev/guides/system-requirements
+[2025-06-19T09:43:09.451Z] [INFO] Navigating to https://pptr.dev/guides/system-requirements
+[2025-06-19T09:43:19.800Z] [SUCCESS] Screenshot saved to /home/parth/projects/Puppeteer-screenshort/screenshots/pptr_dev_guides_system-requirements/screenshot-2025-06-19T09-43-19-535Z.png
+[2025-06-19T09:43:19.877Z] [INFO] Browser closed for https://pptr.dev/guides/system-requirements
+[2025-06-19T09:43:19.877Z] [SUCCESS] 
+=== Screenshot Capture Summary ===
+Total URLs processed: 1
+Successful: 1
+Failed: 0
+Log file: /home/parth/projects/Puppeteer-screenshort/screenshots/screenshot-log.txt
+================================
+[2025-06-19T09:46:03.837Z] [INFO] Starting to process 1 URLs...
+[2025-06-19T09:46:03.837Z] [INFO] 
+Processing URL: https://www.google.com/
+[2025-06-19T09:46:03.837Z] [INFO] Starting browser for https://www.google.com/
+[2025-06-19T09:46:04.457Z] [INFO] Navigating to https://www.google.com/
+[2025-06-19T09:46:11.228Z] [SUCCESS] Screenshot saved to /home/parth/projects/Puppeteer-screenshort/screenshots/www_google_com_/screenshot-2025-06-19T09-46-11-100Z.png
+[2025-06-19T09:46:11.303Z] [INFO] Browser closed for https://www.google.com/
+[2025-06-19T09:46:11.303Z] [SUCCESS] 
+=== Screenshot Capture Summary ===
+Total URLs processed: 1
+Successful: 1
+Failed: 0
+Log file: /home/parth/projects/Puppeteer-screenshort/screenshots/screenshot-log.txt
+================================
