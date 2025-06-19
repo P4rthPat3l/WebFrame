@@ -69,19 +69,10 @@ const sanitizeUrl = (url: string): string => {
 };
 
 const compositeWithFrame = async (
-  screenshotPath: string,
-  outputPath: string
+  finalScreenshotPath: string
 ): Promise<void> => {
   const { framePath } = CONFIG.frameConfig;
-
-  // Define screen area based on your iPhone frame
-  // These values need to be adjusted based on your actual frame
-  let screenArea = {
-    x: 35, // Left margin from frame edge
-    y: 115, // Top margin from frame edge
-    width: 344, // Screen width inside frame
-    height: 747, // Screen height inside frame
-  };
+  const outputPath = finalScreenshotPath.replace('.png', '_framed.png');
 
   try {
     // Check if frame file exists
@@ -89,70 +80,217 @@ const compositeWithFrame = async (
       throw new Error(`iPhone frame not found at: ${framePath}`);
     }
 
-    // Get frame dimensions first
-    const frameMetadata = await sharp(framePath).metadata();
-    if (!frameMetadata.width || !frameMetadata.height) {
-      throw new Error('Could not read frame dimensions');
-    }
-    screenArea.width = frameMetadata.width;
-    screenArea.height = frameMetadata.height;
-
-    // Get screenshot dimensions
-    const screenshot = sharp(screenshotPath);
+    // Get screenshot dimensions first
+    const screenshot = sharp(finalScreenshotPath);
     const screenshotMetadata = await screenshot.metadata();
     if (!screenshotMetadata.width || !screenshotMetadata.height) {
       throw new Error('Could not read screenshot dimensions');
     }
 
-    // First, resize the screenshot to fit the screen area exactly
-    const resizedScreenshot = await sharp(screenshotPath)
-      .resize(screenArea.width, screenArea.height, {
-        fit: 'cover',
-        position: 'top',
-      })
-      .png() // Ensure it's PNG format
-      .toBuffer();
+    // Get frame image
+    const frame = sharp(framePath);
+    const frameMetadata = await frame.metadata();
+    if (!frameMetadata.width || !frameMetadata.height) {
+      throw new Error('Could not read frame dimensions');
+    }
 
-    log(
-      `Screenshot resized to ${screenArea.width}x${screenArea.height}`,
-      'info'
-    );
-    log(
-      `Frame dimensions: ${frameMetadata.width}x${frameMetadata.height}`,
-      'info'
-    );
-    log(
-      `Positioning screenshot at x:${screenArea.x}, y:${screenArea.y}`,
-      'info'
-    );
+    log(`Creating composite with screenshot dimensions: ${screenshotMetadata.width}x${screenshotMetadata.height}`, 'info');
+    log(`Frame dimensions: ${frameMetadata.width}x${frameMetadata.height}`, 'info');
 
-    // Create the final composite with frame on top
-    await sharp(framePath)
+    // Create the final composite with frame on top of the screenshot
+    await sharp(finalScreenshotPath)
+      .resize(screenshotMetadata.width, screenshotMetadata.height)
       .composite([
         {
-          input: resizedScreenshot,
-          left: screenArea.x,
-          top: screenArea.y,
-          blend: 'multiply', // Try different blend modes if needed
-        },
+          input: framePath,
+          blend: 'over'
+        }
       ])
-      .png()
       .toFile(outputPath);
 
-    log(`Successfully composited screenshot with iPhone frame`, 'success');
+    log(`Successfully composited screenshot with frame at: ${outputPath}`, 'success');
+    return outputPath;
   } catch (error) {
     log(`Error in compositeWithFrame: ${error}`, 'error');
-    // Fallback: Save the original screenshot without frame
-    await sharp(screenshotPath)
-      .resize(CONFIG.targetDimensions.width, CONFIG.targetDimensions.height, {
-        fit: 'cover',
-        position: 'top',
-      })
-      .toFile(outputPath);
+    // Return original path if composition fails
+    return finalScreenshotPath;
   }
-};
+};;
 
-const takeScreenshot = async (
+// const takeScreenshot = async (
+//   url: string
+// ): Promise<{ success: boolean; message: string }> => {
+//   let browser;
+//   let tempImagePath = '';
+//
+//   try {
+//     log(`Starting browser for ${url}`, 'info');
+//     browser = await puppeteer.launch({
+//       headless: true,
+//       executablePath: '/usr/bin/chromium-browser',
+//       args: ['--no-sandbox', '--disable-setuid-sandbox'],
+//     });
+//
+//     const page = await browser.newPage();
+//
+//     await page.setUserAgent(CONFIG.mobileViewport.userAgent);
+//     await page.setViewport({
+//       width: CONFIG.mobileViewport.width,
+//       height: CONFIG.mobileViewport.height,
+//       deviceScaleFactor: CONFIG.mobileViewport.deviceScaleFactor,
+//       isMobile: CONFIG.mobileViewport.isMobile,
+//       hasTouch: CONFIG.mobileViewport.hasTouch,
+//     });
+//
+//     await page.evaluateOnNewDocument(() => {
+//       let viewport = document.querySelector('meta[name=viewport]');
+//       if (!viewport) {
+//         viewport = document.createElement('meta');
+//         viewport.setAttribute('name', 'viewport');
+//         document.head.appendChild(viewport);
+//       }
+//       viewport.setAttribute(
+//         'content',
+//         'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no'
+//       );
+//
+//       const style = document.createElement('style');
+//       style.textContent = `
+//         html, body {
+//           margin: 0;
+//           padding: 0;
+//           width: 100%;
+//           min-height: 100vh !important;
+//           height: 100% !important;
+//           position: relative;
+//           overflow-x: hidden;
+//         }
+//         /* Ensure the footer stays at bottom */
+//         body {
+//           display: flex;
+//           flex-direction: column;
+//         }
+//         /* Target common footer classes */
+//         footer, .footer, [class*="footer-"], [id*="footer-"],
+//         [class*="bottom-bar"], [id*="bottom-bar"] {
+//           margin-top: auto !important;
+//         }
+//       `;
+//       document.head.appendChild(style);
+//     });
+//
+//     log(`Navigating to ${url}`, 'info');
+//     const response = await page.goto(url, {
+//       waitUntil: 'networkidle0',
+//       timeout: CONFIG.timeout,
+//     });
+//
+//     const skipStatusCheckDomains = ['local.sparissimo.world'];
+//     const shouldSkipStatusCheck = skipStatusCheckDomains.some((domain) =>
+//       url.includes(domain)
+//     );
+//
+//     if (!shouldSkipStatusCheck) {
+//       if (!response) {
+//         throw new Error('Navigation failed: No response');
+//       }
+//
+//       if (!response.ok()) {
+//         throw new Error(`HTTP ${response.status()}: ${response.statusText()}`);
+//       }
+//     }
+//
+//     const getDomainFromUrl = (url: string): string => {
+//       try {
+//         const domain = new URL(url).hostname;
+//         return domain
+//           .replace(/^www\./, '')
+//           .replace(/[^a-z0-9]/gi, '-')
+//           .toLowerCase();
+//       } catch {
+//         return 'screenshot';
+//       }
+//     };
+//
+//     const screenshotName = `${getDomainFromUrl(url)}.png`;
+//     const tempScreenshotPath = path.join(
+//       CONFIG.outputDir,
+//       `temp_${screenshotName}`
+//     );
+//     const rawScreenshotPath = path.join(
+//       CONFIG.outputDir,
+//       `raw_${screenshotName}`
+//     );
+//     const finalScreenshotPath = path.join(CONFIG.outputDir, screenshotName);
+//     tempImagePath = tempScreenshotPath;
+//
+//     // Take the raw screenshot
+//     await page.screenshot({
+//       path: rawScreenshotPath,
+//       fullPage: true,
+//       type: 'png',
+//       fromSurface: true,
+//     });
+//
+//     log(`Compositing screenshot with iPhone frame...`, 'info');
+//
+//     // Composite the screenshot with the iPhone frame
+//     await compositeWithFrame(rawScreenshotPath, finalScreenshotPath);
+//
+//     // Clean up temporary files
+//     if (fs.existsSync(rawScreenshotPath)) {
+//       fs.unlinkSync(rawScreenshotPath);
+//     }
+//     if (fs.existsSync(tempScreenshotPath)) {
+//       fs.unlinkSync(tempScreenshotPath);
+//     }
+//
+//     const successMessage = `Screenshot with frame saved to ${finalScreenshotPath.replace(
+//       process.cwd(),
+//       '.'
+//     )}`;
+//     log(successMessage, 'success');
+//     return { success: true, message: successMessage };
+//   } catch (error) {
+//     // Clean up any temporary files
+//     const tempFiles = [tempImagePath];
+//     const getDomainFromUrl = (url: string): string => {
+//       try {
+//         const domain = new URL(url).hostname;
+//         return domain
+//           .replace(/^www\./, '')
+//           .replace(/[^a-z0-9]/gi, '-')
+//           .toLowerCase();
+//       } catch {
+//         return 'screenshot';
+//       }
+//     };
+//
+//     tempFiles.push(
+//       path.join(CONFIG.outputDir, `raw_${getDomainFromUrl(url)}.png`)
+//     );
+//
+//     tempFiles.forEach((file) => {
+//       if (file && fs.existsSync(file)) {
+//         fs.unlinkSync(file);
+//       }
+//     });
+//
+//     const errorMessage = `Error capturing ${url}: ${
+//       error instanceof Error ? error.message : String(error)
+//     }`;
+//     log(errorMessage, 'error');
+//     return { success: false, message: errorMessage };
+//   } finally {
+//     if (browser) {
+//       await browser.close();
+//       log(`Browser closed for ${url}`, 'info');
+//     }
+//   }
+// };
+
+
+const takeScreenshot2 = async (
   url: string
 ): Promise<{ success: boolean; message: string }> => {
   let browser;
@@ -252,64 +390,42 @@ const takeScreenshot = async (
       CONFIG.outputDir,
       `temp_${screenshotName}`
     );
-    const rawScreenshotPath = path.join(
-      CONFIG.outputDir,
-      `raw_${screenshotName}`
-    );
     const finalScreenshotPath = path.join(CONFIG.outputDir, screenshotName);
     tempImagePath = tempScreenshotPath;
 
-    // Take the raw screenshot
     await page.screenshot({
-      path: rawScreenshotPath,
+      path: tempScreenshotPath,
       fullPage: true,
       type: 'png',
       fromSurface: true,
     });
 
-    log(`Compositing screenshot with iPhone frame...`, 'info');
+    await sharp(tempScreenshotPath)
+      .resize({
+        width: CONFIG.targetDimensions.width,
+        height: CONFIG.targetDimensions.height,
+        fit: 'cover',
+        position: 'top',
+      })
+      .toFile(finalScreenshotPath);
 
-    // Composite the screenshot with the iPhone frame
-    await compositeWithFrame(rawScreenshotPath, finalScreenshotPath);
 
-    // Clean up temporary files
-    if (fs.existsSync(rawScreenshotPath)) {
-      fs.unlinkSync(rawScreenshotPath);
-    }
+    const framedImagePath = await compositeWithFrame(finalScreenshotPath);
+
     if (fs.existsSync(tempScreenshotPath)) {
       fs.unlinkSync(tempScreenshotPath);
     }
 
-    const successMessage = `Screenshot with frame saved to ${finalScreenshotPath.replace(
+    const successMessage = `Screenshot saved to ${framedImagePath.replace(
       process.cwd(),
       '.'
     )}`;
     log(successMessage, 'success');
     return { success: true, message: successMessage };
   } catch (error) {
-    // Clean up any temporary files
-    const tempFiles = [tempImagePath];
-    const getDomainFromUrl = (url: string): string => {
-      try {
-        const domain = new URL(url).hostname;
-        return domain
-          .replace(/^www\./, '')
-          .replace(/[^a-z0-9]/gi, '-')
-          .toLowerCase();
-      } catch {
-        return 'screenshot';
-      }
-    };
-
-    tempFiles.push(
-      path.join(CONFIG.outputDir, `raw_${getDomainFromUrl(url)}.png`)
-    );
-
-    tempFiles.forEach((file) => {
-      if (file && fs.existsSync(file)) {
-        fs.unlinkSync(file);
-      }
-    });
+    if (tempImagePath && fs.existsSync(tempImagePath)) {
+      fs.unlinkSync(tempImagePath);
+    }
 
     const errorMessage = `Error capturing ${url}: ${
       error instanceof Error ? error.message : String(error)
@@ -322,7 +438,7 @@ const takeScreenshot = async (
       log(`Browser closed for ${url}`, 'info');
     }
   }
-};
+}
 
 const main = async () => {
   const urls = process.argv.slice(2);
@@ -352,7 +468,7 @@ const main = async () => {
 
   for (const url of urls) {
     log(`\nProcessing URL: ${url}`, 'info');
-    const result = await takeScreenshot(url);
+    const result = await takeScreenshot2(url);
     results.push({ url, ...result });
 
     if (result.success) {
