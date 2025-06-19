@@ -70,7 +70,7 @@ const sanitizeUrl = (url: string): string => {
 
 const compositeWithFrame = async (
   finalScreenshotPath: string
-): Promise<void> => {
+): Promise<string> => {
   const { framePath } = CONFIG.frameConfig;
   const outputPath = finalScreenshotPath.replace('.png', '_framed.png');
 
@@ -87,35 +87,41 @@ const compositeWithFrame = async (
       throw new Error('Could not read screenshot dimensions');
     }
 
-    // Get frame image
-    const frame = sharp(framePath);
-    const frameMetadata = await frame.metadata();
-    if (!frameMetadata.width || !frameMetadata.height) {
-      throw new Error('Could not read frame dimensions');
-    }
+    // Resize the frame to match screenshot dimensions
+    // const resizedFrame = await sharp(framePath)
+    //   .resize(screenshotMetadata.width, screenshotMetadata.height)
+    //   .toBuffer();
+    // Calculate new dimensions (reduce height by 5% to show bottom buttons)
+    const reducedHeight = Math.floor(screenshotMetadata.height * 0.99); // Reduce height by 5%
+    const aspectRatio = screenshotMetadata.width / screenshotMetadata.height;
+    const newWidth = Math.floor(reducedHeight * aspectRatio);
+    const resizedFrame = await sharp(framePath)
+      .resize(newWidth, reducedHeight, {
+        fit: 'contain',
+        background: { r: 0, g: 0, b: 0, alpha: 0 }
+      })
+      .toBuffer();
 
-    log(`Creating composite with screenshot dimensions: ${screenshotMetadata.width}x${screenshotMetadata.height}`, 'info');
-    log(`Frame dimensions: ${frameMetadata.width}x${frameMetadata.height}`, 'info');
+    log(`Resizing frame to match screenshot: ${screenshotMetadata.width}x${screenshotMetadata.height}`, 'info');
 
-    // Create the final composite with frame on top of the screenshot
+    // Create the final composite with resized frame on top of the screenshot
     await sharp(finalScreenshotPath)
-      .resize(screenshotMetadata.width, screenshotMetadata.height)
       .composite([
         {
-          input: framePath,
+          input: resizedFrame,
           blend: 'over'
         }
       ])
       .toFile(outputPath);
 
-    log(`Successfully composited screenshot with frame at: ${outputPath}`, 'success');
+    log(`Successfully composited screenshot with resized frame at: ${outputPath}`, 'success');
     return outputPath;
   } catch (error) {
     log(`Error in compositeWithFrame: ${error}`, 'error');
     // Return original path if composition fails
     return finalScreenshotPath;
   }
-};;
+}
 
 // const takeScreenshot = async (
 //   url: string
