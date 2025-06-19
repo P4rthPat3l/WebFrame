@@ -28,7 +28,7 @@ const CONFIG = {
   },
   outputDir: path.join(__dirname, 'screenshots'),
   logFile: 'screenshot-log.txt',
-  timeout: 30000, // 30 seconds timeout for page load
+  timeout: 60000, // 60 seconds timeout for page load
 };
 
 // Create output directory if it doesn't exist
@@ -99,8 +99,9 @@ const takeScreenshot = async (
       hasTouch: CONFIG.mobileViewport.hasTouch,
     });
 
-    // Force mobile viewport meta tag
+    // Force mobile viewport meta tag and fix viewport height
     await page.evaluateOnNewDocument(() => {
+      // Set viewport meta tag
       let viewport = document.querySelector('meta[name=viewport]');
       if (!viewport) {
         viewport = document.createElement('meta');
@@ -111,6 +112,31 @@ const takeScreenshot = async (
         'content',
         'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no'
       );
+
+      // Add CSS to ensure proper viewport height
+      const style = document.createElement('style');
+      style.textContent = `
+        html, body {
+          margin: 0;
+          padding: 0;
+          width: 100%;
+          min-height: 100vh !important;
+          height: 100% !important;
+          position: relative;
+          overflow-x: hidden;
+        }
+        /* Ensure the footer stays at bottom */
+        body {
+          display: flex;
+          flex-direction: column;
+        }
+        /* Target common footer classes */
+        footer, .footer, [class*="footer-"], [id*="footer-"], 
+        [class*="bottom-bar"], [id*="bottom-bar"] {
+          margin-top: auto !important;
+        }
+      `;
+      document.head.appendChild(style);
     });
 
     log(`Navigating to ${url}`, 'info');
@@ -148,6 +174,7 @@ const takeScreenshot = async (
       path: tempScreenshotPath,
       fullPage: true,
       type: 'png',
+      fromSurface: true,
     });
 
     // Resize the image to target dimensions
