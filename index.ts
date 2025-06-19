@@ -22,6 +22,17 @@ const CONFIG = {
     width: 1080,
     height: 2400,
   },
+  // iPhone frame configuration
+  frameConfig: {
+    framePath: path.join(__dirname, 'iphone-frame_Edited.png'), // Path to your transparent iPhone frame
+    // Screen area within the frame (adjust these values based on your frame)
+    screenArea: {
+      x: 50, // X offset from left edge of frame
+      y: 120, // Y offset from top edge of frame
+      width: 980, // Width of screen area inside frame
+      height: 2160, // Height of screen area inside frame
+    },
+  },
   outputDir: path.join(__dirname, 'screenshots'),
   timeout: 60000,
 };
@@ -55,6 +66,94 @@ const sanitizeUrl = (url: string): string => {
     .replace(/^https?:\/\//, '')
     .replace(/[^a-zA-Z0-9-]/g, '_')
     .toLowerCase();
+};
+
+const compositeWithFrame = async (
+  screenshotPath: string,
+  outputPath: string
+): Promise<void> => {
+  const { framePath, screenArea } = CONFIG.frameConfig;
+
+  try {
+    // Check if frame file exists
+    if (!fs.existsSync(framePath)) {
+      throw new Error(`iPhone frame not found at: ${framePath}`);
+    }
+
+    // Get frame dimensions first
+    const frameMetadata = await sharp(framePath).metadata();
+    if (!frameMetadata.width || !frameMetadata.height) {
+      throw new Error('Could not read frame dimensions');
+    }
+
+    // Get screenshot dimensions
+    const screenshot = sharp(screenshotPath);
+    const screenshotMetadata = await screenshot.metadata();
+    if (!screenshotMetadata.width || !screenshotMetadata.height) {
+      throw new Error('Could not read screenshot dimensions');
+    }
+
+    // Calculate scale to fit screenshot within screen area
+    const scale = Math.min(
+      screenArea.width / screenshotMetadata.width,
+      screenArea.height / screenshotMetadata.height
+    );
+
+    const targetWidth = Math.floor(screenshotMetadata.width * scale);
+    const targetHeight = Math.floor(screenshotMetadata.height * scale);
+
+    // Calculate centered position
+    const left = Math.max(
+      0,
+      Math.floor(screenArea.x + (screenArea.width - targetWidth) / 2)
+    );
+    const top = Math.max(
+      0,
+      Math.floor(screenArea.y + (screenArea.height - targetHeight) / 2)
+    );
+
+    // Create a blank canvas with frame dimensions
+    const canvas = sharp({
+      create: {
+        width: frameMetadata.width,
+        height: frameMetadata.height,
+        channels: 4,
+        background: { r: 0, g: 0, b: 0, alpha: 0 },
+      },
+    });
+
+    // Resize screenshot
+    const resizedScreenshot = await sharp(screenshotPath)
+      .resize(targetWidth, targetHeight, {
+        fit: 'cover',
+        position: 'top',
+      })
+      .toBuffer();
+
+    // Composite the screenshot and frame
+    await canvas
+      .composite([
+        {
+          input: resizedScreenshot,
+          left,
+          top,
+        },
+        {
+          input: framePath, // Use frame as overlay
+          blend: 'over',
+        },
+      ])
+      .toFile(outputPath);
+  } catch (error) {
+    log(`Error in compositeWithFrame: ${error}`, 'error');
+    // Fallback: Save the original screenshot without frame
+    await sharp(screenshotPath)
+      .resize(CONFIG.targetDimensions.width, CONFIG.targetDimensions.height, {
+        fit: 'cover',
+        position: 'top',
+      })
+      .toFile(outputPath);
+  }
 };
 
 const takeScreenshot = async (
@@ -157,39 +256,64 @@ const takeScreenshot = async (
       CONFIG.outputDir,
       `temp_${screenshotName}`
     );
+    const rawScreenshotPath = path.join(
+      CONFIG.outputDir,
+      `raw_${screenshotName}`
+    );
     const finalScreenshotPath = path.join(CONFIG.outputDir, screenshotName);
     tempImagePath = tempScreenshotPath;
 
+    // Take the raw screenshot
     await page.screenshot({
-      path: tempScreenshotPath,
+      path: rawScreenshotPath,
       fullPage: true,
       type: 'png',
       fromSurface: true,
     });
 
-    await sharp(tempScreenshotPath)
-      .resize({
-        width: CONFIG.targetDimensions.width,
-        height: CONFIG.targetDimensions.height,
-        fit: 'cover',
-        position: 'top',
-      })
-      .toFile(finalScreenshotPath);
+    log(`Compositing screenshot with iPhone frame...`, 'info');
 
+    // Composite the screenshot with the iPhone frame
+    await compositeWithFrame(rawScreenshotPath, finalScreenshotPath);
+
+    // Clean up temporary files
+    if (fs.existsSync(rawScreenshotPath)) {
+      fs.unlinkSync(rawScreenshotPath);
+    }
     if (fs.existsSync(tempScreenshotPath)) {
       fs.unlinkSync(tempScreenshotPath);
     }
 
-    const successMessage = `Screenshot saved to ${finalScreenshotPath.replace(
+    const successMessage = `Screenshot with frame saved to ${finalScreenshotPath.replace(
       process.cwd(),
       '.'
     )}`;
     log(successMessage, 'success');
     return { success: true, message: successMessage };
   } catch (error) {
-    if (tempImagePath && fs.existsSync(tempImagePath)) {
-      fs.unlinkSync(tempImagePath);
-    }
+    // Clean up any temporary files
+    const tempFiles = [tempImagePath];
+    const getDomainFromUrl = (url: string): string => {
+      try {
+        const domain = new URL(url).hostname;
+        return domain
+          .replace(/^www\./, '')
+          .replace(/[^a-z0-9]/gi, '-')
+          .toLowerCase();
+      } catch {
+        return 'screenshot';
+      }
+    };
+
+    tempFiles.push(
+      path.join(CONFIG.outputDir, `raw_${getDomainFromUrl(url)}.png`)
+    );
+
+    tempFiles.forEach((file) => {
+      if (file && fs.existsSync(file)) {
+        fs.unlinkSync(file);
+      }
+    });
 
     const errorMessage = `Error capturing ${url}: ${
       error instanceof Error ? error.message : String(error)
@@ -213,7 +337,18 @@ const main = async () => {
     process.exit(1);
   }
 
+  // Check if iPhone frame exists
+  if (!fs.existsSync(CONFIG.frameConfig.framePath)) {
+    log(`iPhone frame not found at: ${CONFIG.frameConfig.framePath}`, 'error');
+    log(
+      'Please ensure you have the iPhone frame image in the correct location.',
+      'warning'
+    );
+    process.exit(1);
+  }
+
   log(`Starting to process ${urls.length} URLs...`, 'info');
+  log(`Using iPhone frame: ${CONFIG.frameConfig.framePath}`, 'info');
 
   const results = [];
   let successCount = 0;
@@ -235,6 +370,7 @@ const main = async () => {
 Total URLs processed: ${urls.length}
 Successful: ${successCount}
 Failed: ${failureCount}
+iPhone frame applied: ${successCount > 0 ? 'Yes' : 'No'}
 ================================`;
 
   log(
