@@ -138,12 +138,20 @@ const takeScreenshot = async (
       timeout: CONFIG.timeout,
     });
 
-    if (!response) {
-      throw new Error('Navigation failed: No response');
-    }
+    // Skip HTTP status check for specific domains
+    const skipStatusCheckDomains = ['local.sparissimo.world'];
+    const shouldSkipStatusCheck = skipStatusCheckDomains.some((domain) =>
+      url.includes(domain)
+    );
 
-    if (!response.ok()) {
-      throw new Error(`HTTP ${response.status()}: ${response.statusText()}`);
+    if (!shouldSkipStatusCheck) {
+      if (!response) {
+        throw new Error('Navigation failed: No response');
+      }
+
+      if (!response.ok()) {
+        throw new Error(`HTTP ${response.status()}: ${response.statusText()}`);
+      }
     }
 
     // Create a directory for this website
