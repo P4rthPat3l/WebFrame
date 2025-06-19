@@ -11,20 +11,25 @@ const __dirname = path.dirname(__filename);
 // Configuration
 const CONFIG = {
   viewport: {
-    // Standard mobile device dimensions (e.g., iPhone 12 Pro)
     width: 1080,
     height: 2400,
-    deviceScaleFactor: 3, // Device pixel ratio (3x for retina displays)
+    deviceScaleFactor: 1,
     isMobile: true,
     hasTouch: true,
     userAgent:
-      'Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Mobile/15E148 Safari/604.1',
+      'Mozilla/5.0 (Linux; Android 12; SM-S908B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.79 Mobile Safari/537.36',
     deviceMetrics: {
-      width: 390, // Device width in physical pixels
-      height: 844, // Device height in physical pixels
-      pixelRatio: 3, // Device pixel ratio
+      width: 1080, // Match viewport width
+      height: 2400, // Match viewport height
+      pixelRatio: 1, // Match deviceScaleFactor
       mobile: true,
     },
+    // Viewport settings for mobile
+    viewportMeta: `
+      <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+      <meta name="mobile-web-app-capable" content="yes">
+      <meta name="theme-color" content="#ffffff">
+    `,
   },
   outputDir: path.join(__dirname, 'screenshots'),
   logFile: 'screenshot-log.txt',
@@ -81,14 +86,17 @@ const takeScreenshot = async (
 
     browser = await puppeteer.launch({
       headless: true,
+
       executablePath: '/usr/bin/chromium-browser',
       args: ['--no-sandbox', '--disable-setuid-sandbox'],
     });
 
     const page = await browser.newPage();
 
-    // Set mobile viewport and user agent
+    // Set viewport and user agent
     await page.setUserAgent(CONFIG.viewport.userAgent);
+
+    // Set viewport before navigation
     await page.setViewport({
       width: CONFIG.viewport.width,
       height: CONFIG.viewport.height,
@@ -109,30 +117,37 @@ const takeScreenshot = async (
         y: 0,
         width: CONFIG.viewport.width,
         height: CONFIG.viewport.height,
-        scale: 1, // Ensure no zoom
+        scale: 1,
       },
     });
 
-    // Disable viewport scaling
-    await page.addStyleTag({
-      content: `
-        @viewport {
-          width: device-width;
-          initial-scale: 1.0;
-          minimum-scale: 1.0;
-          maximum-scale: 1.0;
-          user-scalable: no;
-        }
-        html, body {
-          margin: 0;
-          padding: 0;
-          width: 100%;
-          overflow-x: hidden;
-          -webkit-text-size-adjust: 100%;
-          -ms-text-size-adjust: 100%;
-        }
-      `,
+    // Set up mobile emulation
+    await client.send('Emulation.setTouchEmulationEnabled', {
+      enabled: true,
+      configuration: 'mobile',
     });
+
+    // Add viewport meta tag
+    await page.setContent(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          ${CONFIG.viewport.viewportMeta}
+          <style>
+            html, body {
+              margin: 0;
+              padding: 0;
+              width: 100%;
+              height: 100%;
+              overflow: hidden;
+              -webkit-text-size-adjust: 100%;
+              -ms-text-size-adjust: 100%;
+            }
+          </style>
+        </head>
+        <body></body>
+      </html>
+    `);
 
     log(`Navigating to ${url}`, 'info');
     const response = await page.goto(url, {
@@ -154,9 +169,13 @@ const takeScreenshot = async (
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const screenshotPath = path.join(siteDir, `screenshot-${timestamp}.png`);
 
+    // Take screenshot of just the viewport
     await page.screenshot({
       path: screenshotPath,
-      fullPage: true,
+      fullPage: false, // Capture only the viewport
+      captureBeyondViewport: false, // Don't capture content outside the viewport
+      type: 'png',
+      omitBackground: false,
     });
 
     const successMessage = `Screenshot saved to ${screenshotPath}`;
