@@ -27,20 +27,19 @@ const CONFIG = {
     height: 2400,
   },
   outputDir: path.join(__dirname, 'screenshots'),
-  logFile: 'screenshot-log.txt',
   timeout: 60000, // 60 seconds timeout for page load
 };
 
 // Create output directory if it doesn't exist
 fs.ensureDirSync(CONFIG.outputDir);
 
-// Log function to write to both console and log file
+// Simplified log function that only logs to console
 const log = (
   message: string,
   type: 'info' | 'success' | 'error' | 'warning' = 'info'
 ) => {
-  const timestamp = new Date().toISOString();
-  const logMessage = `[${timestamp}] [${type.toUpperCase()}] ${message}`;
+  const timestamp = new Date().toLocaleTimeString();
+  const logMessage = `[${timestamp}] ${type.toUpperCase()}: ${message}`;
 
   // Log to console with colors
   switch (type) {
@@ -56,12 +55,6 @@ const log = (
     default:
       console.log(logMessage);
   }
-
-  // Append to log file
-  fs.appendFileSync(
-    path.join(CONFIG.outputDir, CONFIG.logFile),
-    logMessage + '\n'
-  );
 };
 
 // Function to sanitize URL for directory name
@@ -153,20 +146,25 @@ const takeScreenshot = async (
       throw new Error(`HTTP ${response.status()}: ${response.statusText()}`);
     }
 
-    // Create a directory for this website
-    const siteDir = path.join(CONFIG.outputDir, sanitizeUrl(url));
+    // Create a directory for this website with date
+    const today = new Date().toISOString().split('T')[0];
+    const siteDir = path.join(
+      CONFIG.outputDir,
+      sanitizeUrl(url),
+      today // Add date-based subfolder
+    );
     fs.ensureDirSync(siteDir);
 
-    // Generate a timestamp for the screenshot
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const tempScreenshotPath = path.join(
-      siteDir,
-      `temp-screenshot-${timestamp}.png`
-    );
-    const finalScreenshotPath = path.join(
-      siteDir,
-      `screenshot-${timestamp}.png`
-    );
+    // Generate a clean filename with timestamp
+    const timeStr = new Date()
+      .toISOString()
+      .replace(/[:.]/g, '-')
+      .replace('T', '_')
+      .slice(0, 19);
+
+    const screenshotName = `screenshot_${timeStr}.png`;
+    const tempScreenshotPath = path.join(siteDir, `temp_${screenshotName}`);
+    const finalScreenshotPath = path.join(siteDir, screenshotName);
     tempImagePath = tempScreenshotPath;
 
     // Take screenshot of the full page
@@ -187,10 +185,34 @@ const takeScreenshot = async (
       })
       .toFile(finalScreenshotPath);
 
-    // Remove temporary file
-    fs.unlinkSync(tempScreenshotPath);
+    // Remove temporary file if it exists
+    if (fs.existsSync(tempScreenshotPath)) {
+      fs.unlinkSync(tempScreenshotPath);
+    }
 
-    const successMessage = `Screenshot saved to ${finalScreenshotPath} (${CONFIG.targetDimensions.width}x${CONFIG.targetDimensions.height})`;
+    // Clean up old screenshots (keep last 5)
+    try {
+      const files = fs
+        .readdirSync(siteDir)
+        .filter(
+          (file) => file.endsWith('.png') && file.startsWith('screenshot_')
+        )
+        .sort()
+        .reverse();
+
+      if (files.length > 5) {
+        for (const file of files.slice(5)) {
+          fs.unlinkSync(path.join(siteDir, file));
+        }
+      }
+    } catch (cleanupError) {
+      console.warn('Could not clean up old screenshots:', cleanupError);
+    }
+
+    const successMessage = `Screenshot saved to ${finalScreenshotPath.replace(
+      process.cwd(),
+      '.'
+    )}`;
     log(successMessage, 'success');
     return { success: true, message: successMessage };
   } catch (error) {
@@ -247,7 +269,6 @@ const main = async () => {
 Total URLs processed: ${urls.length}
 Successful: ${successCount}
 Failed: ${failureCount}
-Log file: ${path.join(CONFIG.outputDir, CONFIG.logFile)}
 ================================`;
 
   log(
