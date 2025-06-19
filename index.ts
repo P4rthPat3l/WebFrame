@@ -72,7 +72,16 @@ const compositeWithFrame = async (
   screenshotPath: string,
   outputPath: string
 ): Promise<void> => {
-  const { framePath, screenArea } = CONFIG.frameConfig;
+  const { framePath } = CONFIG.frameConfig;
+
+  // Define screen area based on your iPhone frame
+  // These values need to be adjusted based on your actual frame
+  let screenArea = {
+    x: 35, // Left margin from frame edge
+    y: 115, // Top margin from frame edge
+    width: 344, // Screen width inside frame
+    height: 747, // Screen height inside frame
+  };
 
   try {
     // Check if frame file exists
@@ -85,6 +94,8 @@ const compositeWithFrame = async (
     if (!frameMetadata.width || !frameMetadata.height) {
       throw new Error('Could not read frame dimensions');
     }
+    screenArea.width = frameMetadata.width;
+    screenArea.height = frameMetadata.height;
 
     // Get screenshot dimensions
     const screenshot = sharp(screenshotPath);
@@ -93,54 +104,39 @@ const compositeWithFrame = async (
       throw new Error('Could not read screenshot dimensions');
     }
 
-    // Calculate scale to fit screenshot within screen area
-    const scale = Math.min(
-      screenArea.width / screenshotMetadata.width,
-      screenArea.height / screenshotMetadata.height
+    // First, resize the screenshot to fit the screen area exactly
+    const resizedScreenshot = await sharp(screenshotPath)
+      .resize(screenArea.width, screenArea.height, {
+        fit: 'cover',
+        position: 'top',
+      })
+      .png() // Ensure it's PNG format
+      .toBuffer();
+
+    log(
+      `Screenshot resized to ${screenArea.width}x${screenArea.height}`,
+      'info'
+    );
+    log(
+      `Frame dimensions: ${frameMetadata.width}x${frameMetadata.height}`,
+      'info'
+    );
+    log(
+      `Positioning screenshot at x:${screenArea.x}, y:${screenArea.y}`,
+      'info'
     );
 
-    const targetWidth = Math.floor(screenshotMetadata.width * scale);
-    const targetHeight = Math.floor(screenshotMetadata.height * scale);
-
-    // Calculate centered position within the screen area
-    const left = Math.max(
-      0,
-      Math.floor(screenArea.x + (screenArea.width - targetWidth) / 2)
-    );
-    const top = Math.max(
-      0,
-      Math.floor(screenArea.y + (screenArea.height - targetHeight) / 2)
-    );
-
-    // Create a canvas with frame dimensions, place screenshot first, then frame on top
-    await sharp({
-      create: {
-        width: frameMetadata.width,
-        height: frameMetadata.height,
-        channels: 4,
-        background: { r: 255, g: 255, b: 255, alpha: 1 }, // White background
-      },
-    })
+    // Create the final composite with frame on top
+    await sharp(framePath)
       .composite([
-        // First: Place the screenshot in the background
         {
-          input: await sharp(screenshotPath)
-            .resize(targetWidth, targetHeight, {
-              fit: 'cover',
-              position: 'top',
-            })
-            .toBuffer(),
-          left,
-          top,
-        },
-        // Second: Place the transparent iPhone frame ON TOP
-        {
-          input: framePath,
-          blend: 'over', // Frame goes over the screenshot
-          top: 0,
-          left: 0,
+          input: resizedScreenshot,
+          left: screenArea.x,
+          top: screenArea.y,
+          blend: 'multiply', // Try different blend modes if needed
         },
       ])
+      .png()
       .toFile(outputPath);
 
     log(`Successfully composited screenshot with iPhone frame`, 'success');
