@@ -11,9 +11,20 @@ const __dirname = path.dirname(__filename);
 // Configuration
 const CONFIG = {
   viewport: {
-    width: 1320,
-    height: 2868,
-    deviceScaleFactor: 1,
+    // Standard mobile device dimensions (e.g., iPhone 12 Pro)
+    width: 1080,
+    height: 2400,
+    deviceScaleFactor: 3, // Device pixel ratio (3x for retina displays)
+    isMobile: true,
+    hasTouch: true,
+    userAgent:
+      'Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Mobile/15E148 Safari/604.1',
+    deviceMetrics: {
+      width: 390, // Device width in physical pixels
+      height: 844, // Device height in physical pixels
+      pixelRatio: 3, // Device pixel ratio
+      mobile: true,
+    },
   },
   outputDir: path.join(__dirname, 'screenshots'),
   logFile: 'screenshot-log.txt',
@@ -76,10 +87,51 @@ const takeScreenshot = async (
 
     const page = await browser.newPage();
 
+    // Set mobile viewport and user agent
+    await page.setUserAgent(CONFIG.viewport.userAgent);
     await page.setViewport({
       width: CONFIG.viewport.width,
       height: CONFIG.viewport.height,
-      //   deviceScaleFactor: CONFIG.viewport.deviceScaleFactor,
+      deviceScaleFactor: CONFIG.viewport.deviceScaleFactor,
+      isMobile: CONFIG.viewport.isMobile,
+      hasTouch: CONFIG.viewport.hasTouch,
+    });
+
+    // Set device metrics for mobile emulation
+    const client = await page.target().createCDPSession();
+    await client.send('Emulation.setDeviceMetricsOverride', {
+      width: CONFIG.viewport.deviceMetrics.width,
+      height: CONFIG.viewport.deviceMetrics.height,
+      deviceScaleFactor: CONFIG.viewport.deviceMetrics.pixelRatio,
+      mobile: CONFIG.viewport.deviceMetrics.mobile,
+      viewport: {
+        x: 0,
+        y: 0,
+        width: CONFIG.viewport.width,
+        height: CONFIG.viewport.height,
+        scale: 1, // Ensure no zoom
+      },
+    });
+
+    // Disable viewport scaling
+    await page.addStyleTag({
+      content: `
+        @viewport {
+          width: device-width;
+          initial-scale: 1.0;
+          minimum-scale: 1.0;
+          maximum-scale: 1.0;
+          user-scalable: no;
+        }
+        html, body {
+          margin: 0;
+          padding: 0;
+          width: 100%;
+          overflow-x: hidden;
+          -webkit-text-size-adjust: 100%;
+          -ms-text-size-adjust: 100%;
+        }
+      `,
     });
 
     log(`Navigating to ${url}`, 'info');
