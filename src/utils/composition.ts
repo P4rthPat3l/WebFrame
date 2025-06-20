@@ -7,7 +7,8 @@ export const compositeWithFrameAndroind = async (
   finalScreenshotPath: string,
 ): Promise<string> => {
   const framePath = CONFIG.frameConfig.androidFramePath;
-  const outputPath = finalScreenshotPath.replace('.png', '_framed_android.png');
+  const timestamp = new Date().getTime();
+  const outputPath = finalScreenshotPath.replace('.png', `_framed_android_${timestamp}.png`);
 
   try {
     if (!fs.existsSync(framePath)) {
@@ -25,12 +26,10 @@ export const compositeWithFrameAndroind = async (
     const targetWidth = CONFIG.targetDimensions.width;
     const targetHeight = CONFIG.targetDimensions.height;
 
-    // Calculate scaling factor to fit screenshot within frame
-    const scale = 0.9; // Adjust this value (0-1) to control how much of the frame is filled
+    const scale = 0.9;
     const scaledWidth = Math.floor(targetWidth * scale);
     const scaledHeight = Math.floor(targetHeight * scale);
 
-    // Create rounded corners mask
     const roundedCorners = Buffer.from(
       `<svg width="${scaledWidth}" height="${scaledHeight}">
         <rect 
