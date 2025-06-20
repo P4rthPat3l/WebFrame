@@ -70,8 +70,9 @@ const sanitizeUrl = (url: string): string => {
 };
 
 const compositeWithFrame = async (
-    finalScreenshotPath: string): Promise<string> => {
-  const  framePath  = CONFIG.frameConfig.framePath;
+  finalScreenshotPath: string
+): Promise<string> => {
+  const framePath = CONFIG.frameConfig.framePath;
   const outputPath = finalScreenshotPath.replace('.png', '_framed.png');
 
   try {
@@ -114,12 +115,14 @@ const compositeWithFrame = async (
     const roundedScreenshot = await sharp(finalScreenshotPath)
       .resize(scaledWidth, scaledHeight, {
         fit: 'cover',
-        position: 'center'
+        position: 'center',
       })
-      .composite([{
-        input: roundedCorners,
-        blend: 'dest-in'
-      }])
+      .composite([
+        {
+          input: roundedCorners,
+          blend: 'dest-in',
+        },
+      ])
       .toBuffer();
 
     // Create a transparent background with target dimensions
@@ -128,9 +131,11 @@ const compositeWithFrame = async (
         width: targetWidth,
         height: targetHeight,
         channels: 4,
-        background: { r: 0, g: 0, b: 0, alpha: 0 }
-      }
-    }).png().toBuffer();
+        background: { r: 0, g: 0, b: 0, alpha: 0 },
+      },
+    })
+      .png()
+      .toBuffer();
 
     // Calculate position to center the screenshot within the frame
     const left = Math.floor((targetWidth - scaledWidth) / 2);
@@ -138,36 +143,43 @@ const compositeWithFrame = async (
 
     // Composite the screenshot onto the transparent background
     const screenshotWithBg = await sharp(background)
-      .composite([{
-        input: roundedScreenshot,
-        left,
-        top
-      }])
+      .composite([
+        {
+          input: roundedScreenshot,
+          left,
+          top,
+        },
+      ])
       .toBuffer();
 
     // Resize the frame to match target dimensions
     const resizedFrame = await sharp(framePath)
-      .resize(targetWidth, (targetHeight - 110), {
+      .resize(targetWidth, targetHeight - 110, {
         fit: 'fill',
-        background: { r: 0, g: 0, b: 0, alpha: 0 }
+        background: { r: 0, g: 0, b: 0, alpha: 0 },
       })
       .toBuffer();
 
     // Composite the frame on top of the screenshot
     await sharp(screenshotWithBg)
-      .composite([{
-        input: resizedFrame,
-        blend: 'over'
-      }])
+      .composite([
+        {
+          input: resizedFrame,
+          blend: 'over',
+        },
+      ])
       .toFile(outputPath);
 
-    log(`Successfully composited screenshot with frame at: ${outputPath}`, 'success');
+    log(
+      `Successfully composited screenshot with frame at: ${outputPath}`,
+      'success'
+    );
     return outputPath;
   } catch (error) {
     log(`Error in compositeWithFrame: ${error}`, 'error');
     return finalScreenshotPath;
   }
-}
+};
 
 // const takeScreenshot = async (
 //   url: string
@@ -341,10 +353,10 @@ const compositeWithFrame = async (
 //   }
 // };
 
-
 const compositeWithFrameAndroind = async (
-    finalScreenshotPath: string): Promise<string> => {
-  const  framePath  = CONFIG.frameConfig.androidFramePath;
+  finalScreenshotPath: string
+): Promise<string> => {
+  const framePath = CONFIG.frameConfig.androidFramePath;
   const outputPath = finalScreenshotPath.replace('.png', '_framed_android.png');
 
   try {
@@ -387,12 +399,14 @@ const compositeWithFrameAndroind = async (
     const roundedScreenshot = await sharp(finalScreenshotPath)
       .resize(scaledWidth, scaledHeight, {
         fit: 'cover',
-        position: 'center'
+        position: 'center',
       })
-      .composite([{
-        input: roundedCorners,
-        blend: 'dest-in'
-      }])
+      .composite([
+        {
+          input: roundedCorners,
+          blend: 'dest-in',
+        },
+      ])
       .toBuffer();
 
     // Create a transparent background with target dimensions
@@ -401,9 +415,11 @@ const compositeWithFrameAndroind = async (
         width: targetWidth,
         height: targetHeight,
         channels: 4,
-        background: { r: 0, g: 0, b: 0, alpha: 0 }
-      }
-    }).png().toBuffer();
+        background: { r: 0, g: 0, b: 0, alpha: 0 },
+      },
+    })
+      .png()
+      .toBuffer();
 
     // Calculate position to center the screenshot within the frame
     const left = Math.floor((targetWidth - scaledWidth) / 2);
@@ -411,36 +427,43 @@ const compositeWithFrameAndroind = async (
 
     // Composite the screenshot onto the transparent background
     const screenshotWithBg = await sharp(background)
-      .composite([{
-        input: roundedScreenshot,
-        left,
-        top
-      }])
+      .composite([
+        {
+          input: roundedScreenshot,
+          left,
+          top,
+        },
+      ])
       .toBuffer();
 
     // Resize the frame to match target dimensions
     const resizedFrame = await sharp(framePath)
       .resize(targetWidth, targetHeight, {
         fit: 'contain',
-        background: { r: 0, g: 0, b: 0, alpha: 0 }
+        background: { r: 0, g: 0, b: 0, alpha: 0 },
       })
       .toBuffer();
 
     // Composite the frame on top of the screenshot
     await sharp(screenshotWithBg)
-      .composite([{
-        input: resizedFrame,
-        blend: 'over'
-      }])
+      .composite([
+        {
+          input: resizedFrame,
+          blend: 'over',
+        },
+      ])
       .toFile(outputPath);
 
-    log(`Successfully composited screenshot with frame at: ${outputPath}`, 'success');
+    log(
+      `Successfully composited screenshot with frame at: ${outputPath}`,
+      'success'
+    );
     return outputPath;
   } catch (error) {
     log(`Error in compositeWithFrame: ${error}`, 'error');
     return finalScreenshotPath;
   }
-}
+};
 
 const takeScreenshot2 = async (
   url: string
@@ -561,16 +584,17 @@ const takeScreenshot2 = async (
       })
       .toFile(finalScreenshotPath);
 
-
     const framedImagePath = await compositeWithFrame(finalScreenshotPath);
 
-   // const framedImagePathAndroid = await compositeWithFrameAndroind(finalScreenshotPath);
+    const framedImagePathAndroid = await compositeWithFrameAndroind(
+      finalScreenshotPath
+    );
 
     if (fs.existsSync(tempScreenshotPath)) {
       fs.unlinkSync(tempScreenshotPath);
     }
 
-    if(fs.existsSync(finalScreenshotPath)) {
+    if (fs.existsSync(finalScreenshotPath)) {
       fs.unlinkSync(finalScreenshotPath);
     }
 
@@ -578,8 +602,6 @@ const takeScreenshot2 = async (
       process.cwd(),
       '.'
     )}`;
-
-
 
     log(successMessage, 'success');
     return { success: true, message: successMessage };
@@ -599,7 +621,7 @@ const takeScreenshot2 = async (
       log(`Browser closed for ${url}`, 'info');
     }
   }
-}
+};
 
 const main = async () => {
   const urls = process.argv.slice(2);
