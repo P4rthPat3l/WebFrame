@@ -11,8 +11,9 @@ export const CONFIG = {
       'Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1',
   },
   targetDimensions: {
-    width: 1080,
-    height: 2400,
+    // 1320 × 2868px
+    width: 1320,
+    height: 2868,
   },
   frameConfig: {
     framePath: path.join(__dirname, '../../iphone-frame_Edited.png'),
