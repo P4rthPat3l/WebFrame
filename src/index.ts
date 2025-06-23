@@ -4,10 +4,23 @@ import Fastify, {
   type FastifyRequest,
 } from 'fastify';
 import cors from '@fastify/cors';
-import { takeScreenshot2_test } from './utils/screenshot';
+import {
+  processScreenshot,
+  processWebsiteScreenshot,
+  takeScreenshot2_test,
+} from './utils/screenshot';
 import { log } from './utils/logger';
 import fs from 'fs-extra';
 import { CONFIG } from './utils/config';
+import fastifyView from '@fastify/view';
+import { fileURLToPath } from 'node:url';
+import ejs from 'ejs';
+import path from 'path';
+import fastifyStatic from '@fastify/static';
+import fastifyMultipart from '@fastify/multipart';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app: FastifyInstance = Fastify({
   logger: true,
@@ -15,6 +28,30 @@ const app: FastifyInstance = Fastify({
 
 await app.register(cors, {
   origin: true,
+});
+
+await app.register(fastifyView, {
+  engine: {
+    ejs: ejs,
+  },
+  root: path.join(__dirname, '../views'),
+  viewExt: 'ejs',
+});
+
+await app.register(fastifyStatic, {
+  root: path.join(__dirname, '../public'),
+  prefix: '/public/',
+});
+
+await app.register(fastifyMultipart, {
+  addToBody: true,
+  limits: {
+    fileSize: 10 * 1024 * 1024,
+  },
+});
+
+app.get('/', async (request: FastifyRequest, reply: FastifyReply) => {
+  return reply.view('index.ejs');
 });
 
 app.get('/health', async (request: FastifyRequest, reply: FastifyReply) => {
@@ -30,7 +67,7 @@ app.get('/screenshot', async (request: FastifyRequest, reply: FastifyReply) => {
   };
 
   const { url, device = 'iphone', width, height } = query;
-  request.log.info('URL: ' + url);
+  request.log.info('Processing URL: ' + url);
 
   if (!url) {
     return reply.status(400).send({
@@ -55,44 +92,62 @@ app.get('/screenshot', async (request: FastifyRequest, reply: FastifyReply) => {
     });
   }
 
-  if (!fs.existsSync(CONFIG.frameConfig.framePath)) {
-    log(`iPhone frame not found at: ${CONFIG.frameConfig.framePath}`, 'error');
-    log(
-      'Please ensure you have the iPhone frame image in the correct location.',
-      'warning',
-    );
-    process.exit(1);
-  }
-
   try {
-    request.log.info(`Processing URL: ${processedUrl}`);
-    const result = await takeScreenshot2_test(
+    const imageBuffer = await processWebsiteScreenshot(
       processedUrl,
-      device,
-      width,
-      height,
+      {
+        device,
+        width: width ? Number(width) : undefined,
+        height: height ? Number(height) : undefined,
+      },
+      request.log,
     );
 
-    if (!result.success) {
-      return reply.status(500).send({ error: result.message });
-    }
+    const fileName = `${new URL(processedUrl).hostname}-${device}-${Date.now()}.png`;
 
-    const filePath = result.path;
-
-    if (!filePath)
-      return reply.status(500).send({ error: 'File path not found' });
-
-    const fileName = `${new URL(processedUrl).hostname}-${device}.png`;
-    request.log.info(`File path: ${filePath}`);
-
-    reply.header('Content-Disposition', `attachment; filename="${fileName}"`);
-    reply.type('image/png');
-
-    return fs.createReadStream(filePath);
+    reply
+      .header('Content-Type', 'image/png')
+      .header('Content-Disposition', `inline; filename="${fileName}"`)
+      .send(imageBuffer);
   } catch (error) {
-    console.error('Error taking screenshot:', error);
+    request.log.error('Error taking screenshot:', error);
     return reply.status(500).send({
       error: 'Failed to take screenshot',
+      message: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+});
+
+app.post('/upload', async (request: FastifyRequest, reply: FastifyReply) => {
+  try {
+    const data = await (request as any).file();
+    if (!data) {
+      return reply.status(400).send({ error: 'No file uploaded' });
+    }
+
+    const device = data.fields.device?.value || 'iphone';
+    const buffer = await data.toBuffer();
+
+    const processedImage = await processScreenshot(
+      buffer,
+      {
+        device,
+        width: 1080,
+        height: 1920,
+      },
+      request.log,
+    );
+
+    const fileName = `framed-${device}-${Date.now()}.png`;
+
+    reply
+      .header('Content-Type', 'image/png')
+      .header('Content-Disposition', `inline; filename="${fileName}"`)
+      .send(processedImage);
+  } catch (error) {
+    request.log.error('Error processing uploaded image:', error);
+    return reply.status(500).send({
+      error: 'Failed to process image',
       message: error instanceof Error ? error.message : 'Unknown error',
     });
   }
