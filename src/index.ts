@@ -132,8 +132,8 @@ app.post('/upload', async (request: FastifyRequest, reply: FastifyReply) => {
       buffer,
       {
         device,
-        width: 1080,
-        height: 1920,
+        width: CONFIG.targetDimensions.width,
+        height: CONFIG.targetDimensions.height,
       },
       request.log,
     );
