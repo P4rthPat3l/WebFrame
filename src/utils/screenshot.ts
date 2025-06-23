@@ -1,8 +1,8 @@
-import type {FastifyBaseLogger} from 'fastify';
+import type { FastifyBaseLogger } from 'fastify';
 import puppeteer from 'puppeteer';
-import {CONFIG} from './config.ts';
+import { CONFIG } from './config.ts';
 import sharp from 'sharp';
-import {applyDeviceFrame} from './composition.ts';
+import { applyDeviceFrame } from './composition.ts';
 
 interface ScreenshotOptions {
   width?: number;
@@ -10,6 +10,13 @@ interface ScreenshotOptions {
   device?: string;
   outputPath?: string;
 }
+
+declare const fetch: typeof globalThis.fetch;
+
+const isImageUrl = (url: string): boolean => {
+  const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'];
+  return imageExtensions.some((ext) => url.toLowerCase().includes(ext));
+};
 
 export const processWebsiteScreenshot = async (
   url: string,
@@ -20,6 +27,20 @@ export const processWebsiteScreenshot = async (
 
   try {
     log.info(`Starting browser for ${url}`, 'info');
+
+    // Handle direct image URLs
+    if (isImageUrl(url)) {
+      log.info('Detected direct image URL, fetching directly');
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(
+          `Failed to fetch image: ${response.status} ${response.statusText}`,
+        );
+      }
+      const imageBuffer = await response.arrayBuffer();
+      return await processScreenshot(Buffer.from(imageBuffer), options, log);
+    }
+
     browser = await puppeteer.launch({
       headless: true,
       executablePath: '/usr/bin/chromium-browser',

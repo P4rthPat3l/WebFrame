@@ -13,6 +13,8 @@ export const applyDeviceFrame = async (
         ? CONFIG.frameConfig.androidFramePath
         : CONFIG.frameConfig.framePath;
 
+    console.log("device", device);
+
     if (!fs.existsSync(framePath)) {
       throw new Error(`Device frame not found at: ${framePath}`);
     }
