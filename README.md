@@ -1,95 +1,158 @@
-# Website Screenshot Tool
+# 🖥️ Puppeteer Screenshot Tool
 
-A Node.js tool built with Puppeteer to capture screenshots of multiple websites at a specified resolution (1320x2868 by default).
+A powerful Node.js application for capturing and enhancing website screenshots with device frames using Puppeteer and Sharp. This tool allows you to take high-quality screenshots of websites and apply device frames (iPhone/Android) to create realistic device mockups.
 
-## Features
+## ✨ Features
 
-- Capture full-page screenshots of multiple websites in one go
-- Automatically creates organized directories for each website
-- Generates detailed logs of the screenshot process
-- Handles errors gracefully and provides a summary report
-- Supports both HTTP and HTTPS URLs
-- Configurable viewport size and timeout settings
+- 📱 Capture website screenshots with customizable viewport settings
+- 📸 Apply realistic device frames (iPhone/Android) to screenshots
+- 🖼️ Process direct image URLs or full web pages
+- ⚡ Fast and efficient screenshot processing with Puppeteer
+- 🎨 High-quality image composition using Sharp
+- 🌐 Web interface for easy interaction
+- 🔄 Hot-reloading development server
 
-## Prerequisites
+## 🚀 Getting Started
 
-- [Bun](https://bun.sh/) (recommended) or Node.js 16+
-- [Git](https://git-scm.com/)
+### Prerequisites
 
-## Installation
+- Node.js 16+ / Bun (recommended)
+- Chromium/Chrome browser
+- npm, yarn, or bun package manager
+
+### Installation
 
 1. Clone the repository:
 
    ```bash
-   git clone <repository-url>
-   cd Puppeteer-screenshort
+   git clone https://github.com/your-username/puppeteer-screenshort.git
+   cd puppeteer-screenshort
    ```
 
 2. Install dependencies:
+
    ```bash
+   # Using Bun (recommended)
    bun install
-   ```
-   or with npm:
-   ```bash
+
+   # Or using npm
    npm install
+
+   # Or using yarn
+   yarn install
    ```
 
-## Usage
+3. Start the development server:
 
-### Basic Usage
+   ```bash
+   bun run dev
+   ```
 
-```bash
-bun start https://example.com https://example.org https://example.net
+4. Open your browser and navigate to `http://localhost:3000`
+
+## 🛠️ Usage
+
+### Web Interface
+
+1. Open the web interface at `http://localhost:3000`
+2. Enter a website URL or image URL
+3. Select device type (iPhone/Android)
+4. Click "Capture Screenshot"
+5. View and download your enhanced screenshot
+
+### API Endpoints
+
+- `POST /api/screenshot` - Capture a screenshot
+
+  - Body: `{ "url": "https://example.com", "device": "iphone" }`
+  - Returns: Image file
+
+- `POST /api/upload` - Upload and process an image
+  - Form Data: `file` (image file)
+  - Query Params: `device` (optional)
+  - Returns: Processed image with frame
+
+## 🏗️ Project Structure
+
+```
+.
+├── src/                    # Source files
+│   ├── index.ts           # Main application entry point
+│   └── utils/             # Utility functions
+│       ├── config.ts      # Configuration settings
+│       ├── screenshot.ts  # Screenshot capture logic
+│       ├── composition.ts # Image composition utilities
+│       └── logger.ts      # Logging utilities
+├── views/                 # EJS templates
+│   └── index.ejs          # Main web interface
+├── public/                # Static assets
+├── screenshots/           # Output directory for screenshots
+├── package.json           # Project dependencies
+└── tsconfig.json          # TypeScript configuration
 ```
 
-### Output
+## ⚙️ Configuration
 
-- Screenshots are saved in the `screenshots/` directory
-- Each website gets its own subdirectory based on the domain name
-- A log file is created at `screenshots/screenshot-log.txt`
+Edit `src/utils/config.ts` to customize:
 
-### Example
+- Viewport dimensions
+- Device frames (iPhone/Android)
+- Output directory
+- Timeout settings
+- User agent strings
 
-```bash
-bun start https://google.com https://github.com https://example.com
-```
+## 🌟 Features in Detail
 
-This will create:
+### Device Frames
 
-```
-screenshots/
-├── google.com/
-│   └── screenshot-2023-01-01T12-00-00-000Z.png
-├── github.com/
-│   └── screenshot-2023-01-01T12-00-30-000Z.png
-├── example.com/
-│   └── screenshot-2023-01-01T12-01-00-000Z.png
-└── screenshot-log.txt
-```
+The tool includes support for both iPhone and Android device frames. The frames are automatically applied to your screenshots, creating realistic device mockups.
 
-## Configuration
+### Responsive Screenshots
 
-You can modify the following settings in `index.ts`:
+Easily capture screenshots at different viewport sizes by modifying the configuration. The default is set to an iPhone 14 Pro Max viewport.
 
-```typescript
-const CONFIG = {
-  viewport: {
-    width: 1320, // Viewport width in pixels
-    height: 2868, // Viewport height in pixels
-    deviceScaleFactor: 1, // Device scale factor
-  },
-  outputDir: path.join(__dirname, 'screenshots'), // Output directory
-  logFile: 'screenshot-log.txt', // Log file name
-  timeout: 30000, // Navigation timeout in milliseconds
-};
-```
+### Direct Image Processing
 
-## Error Handling
+You can process existing images by providing a direct URL to an image file. The tool will download the image and apply the selected device frame.
 
-- Failed screenshots are logged with error details
-- The tool continues processing other URLs if one fails
-- A summary is displayed at the end showing success/failure counts
+## 🚨 Troubleshooting
 
-## License
+### Common Issues
 
-MIT
+1. **Browser not found**:
+
+   - Ensure Chromium/Chrome is installed
+   - Set the correct path in the Puppeteer launch options
+
+2. **Screenshot timeouts**:
+
+   - Increase the timeout in `config.ts` for slower websites
+   - Check your internet connection
+
+3. **Image processing errors**:
+   - Ensure the output directory has write permissions
+   - Check that the frame image files exist in the project root
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- [Puppeteer](https://pptr.dev/) - Headless Chrome Node.js API
+- [Sharp](https://sharp.pixelplumbing.com/) - High-performance image processing
+- [Fastify](https://www.fastify.io/) - Fast and low overhead web framework
+
+---
+
+Made with ❤️ by [Your Name]
