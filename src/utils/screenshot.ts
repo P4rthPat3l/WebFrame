@@ -1,8 +1,8 @@
-import type { FastifyBaseLogger } from 'fastify';
-import puppeteer from 'puppeteer';
-import { CONFIG } from './config.ts';
-import sharp from 'sharp';
-import { applyDeviceFrame } from './composition.ts';
+import type { FastifyBaseLogger } from "fastify";
+import puppeteer from "puppeteer";
+import { CONFIG } from "./config.ts";
+import sharp from "sharp";
+import { applyDeviceFrame } from "./composition.ts";
 
 interface ScreenshotOptions {
   width?: number;
@@ -14,27 +14,27 @@ interface ScreenshotOptions {
 declare const fetch: typeof globalThis.fetch;
 
 const isImageUrl = (url: string): boolean => {
-  const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'];
+  const imageExtensions = [".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp"];
   return imageExtensions.some((ext) => url.toLowerCase().includes(ext));
 };
 
 export const processWebsiteScreenshot = async (
   url: string,
   options: ScreenshotOptions = {},
-  log: FastifyBaseLogger,
+  log: FastifyBaseLogger
 ): Promise<Buffer> => {
   let browser;
 
   try {
-    log.info(`Starting browser for ${url}`, 'info');
+    log.info(`Starting browser for ${url}`, "info");
 
     // Handle direct image URLs
     if (isImageUrl(url)) {
-      log.info('Detected direct image URL, fetching directly');
+      log.info("Detected direct image URL, fetching directly");
       const response = await fetch(url);
       if (!response.ok) {
         throw new Error(
-          `Failed to fetch image: ${response.status} ${response.statusText}`,
+          `Failed to fetch image: ${response.status} ${response.statusText}`
         );
       }
       const imageBuffer = await response.arrayBuffer();
@@ -43,8 +43,8 @@ export const processWebsiteScreenshot = async (
 
     browser = await puppeteer.launch({
       headless: true,
-      executablePath: '/usr/bin/chromium-browser',
-      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      executablePath: process.env.executablePath,
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
     });
 
     const page = await browser.newPage();
@@ -61,7 +61,7 @@ export const processWebsiteScreenshot = async (
 export const processScreenshot = async (
   imageBuffer: Buffer,
   options: ScreenshotOptions = {},
-  log: FastifyBaseLogger,
+  log: FastifyBaseLogger
 ): Promise<Buffer> => {
   const {
     width = CONFIG.targetDimensions.width,
@@ -72,8 +72,8 @@ export const processScreenshot = async (
   let processedImage = sharp(imageBuffer).resize({
     width,
     height,
-    fit: 'cover',
-    position: 'top',
+    fit: "cover",
+    position: "top",
   });
 
   if (device) {
@@ -81,7 +81,7 @@ export const processScreenshot = async (
       const resizedBuffer = await processedImage.toBuffer();
       return await applyDeviceFrame(resizedBuffer, device);
     } catch (error) {
-      log.info(`Error applying device frame: ${error}`, 'error');
+      log.info(`Error applying device frame: ${error}`, "error");
       throw error;
     }
   }
@@ -101,16 +101,16 @@ const configurePage = async (page: any, url: string): Promise<void> => {
 
   await page.evaluateOnNewDocument(() => {
     let viewport =
-      document.querySelector('meta[name=viewport]') ||
-      document.createElement('meta');
-    viewport.setAttribute('name', 'viewport');
+      document.querySelector("meta[name=viewport]") ||
+      document.createElement("meta");
+    viewport.setAttribute("name", "viewport");
     viewport.setAttribute(
-      'content',
-      'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no',
+      "content",
+      "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     );
     document.head.appendChild(viewport);
 
-    const style = document.createElement('style');
+    const style = document.createElement("style");
     style.textContent = `
       html, body {
         margin: 0;
@@ -132,17 +132,17 @@ const configurePage = async (page: any, url: string): Promise<void> => {
 };
 
 const navigateToUrl = async (page: any, url: string): Promise<void> => {
-  const fullUrl = url.startsWith('http') ? url : `https://${url}`;
+  const fullUrl = url.startsWith("http") ? url : `https://${url}`;
   const response = await page.goto(fullUrl, {
-    waitUntil: 'networkidle0',
+    waitUntil: "networkidle0",
     timeout: CONFIG.timeout,
   });
 
-  if (!response) throw new Error('Navigation failed: No response');
+  if (!response) throw new Error("Navigation failed: No response");
 
-  const skipStatusCheckDomains = ['local.sparissimo.world'];
+  const skipStatusCheckDomains = ["local.sparissimo.world"];
   const shouldSkipStatusCheck = skipStatusCheckDomains.some((domain) =>
-    url.includes(domain),
+    url.includes(domain)
   );
 
   if (!shouldSkipStatusCheck && !response.ok()) {
@@ -152,11 +152,11 @@ const navigateToUrl = async (page: any, url: string): Promise<void> => {
 
 const captureScreenshot = async (
   page: any,
-  options: ScreenshotOptions,
+  options: ScreenshotOptions
 ): Promise<Buffer> => {
   return (await page.screenshot({
     fullPage: true,
-    type: 'png',
-    encoding: 'binary',
+    type: "png",
+    encoding: "binary",
   })) as Buffer;
 };
