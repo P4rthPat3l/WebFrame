@@ -1,293 +1,336 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Website to Mobile Frame</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f5f5f5;
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f5f5f5;
+      }
+      .container {
+        background: white;
+        padding: 30px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      h1 {
+        color: #333;
+        text-align: center;
+      }
+      .form-group {
+        margin-bottom: 20px;
+      }
+      label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: bold;
+      }
+      input[type="url"],
+      input[type="file"] {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        box-sizing: border-box;
+      }
+      button {
+        background-color: #4caf50;
+        color: white;
+        padding: 12px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 16px;
+        width: 100%;
+      }
+      button:hover {
+        background-color: #45a049;
+      }
+      .tabs {
+        display: flex;
+        margin-bottom: 20px;
+        border-bottom: 1px solid #ddd;
+      }
+      .tab {
+        padding: 10px 20px;
+        cursor: pointer;
+        background: #f1f1f1;
+        border: none;
+        margin-right: 5px;
+        border-radius: 4px 4px 0 0;
+      }
+      .tab.active {
+        background: #4caf50;
+        color: white;
+      }
+      .tab-content {
+        display: none;
+      }
+      .tab-content.active {
+        display: block;
+      }
+      .preview {
+        margin-top: 20px;
+        text-align: center;
+      }
+      #imagePreview {
+        max-width: 100%;
+        max-height: 500px;
+        margin-top: 10px;
+        display: none;
+      }
+      .loading {
+        display: none;
+        text-align: center;
+        margin: 20px 0;
+      }
+      .spinner {
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #4caf50;
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto;
+      }
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
         }
-        .container {
-            background: white;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        100% {
+          transform: rotate(360deg);
         }
-        h1 {
-            color: #333;
-            text-align: center;
-        }
-        .form-group {
-            margin-bottom: 20px;
-        }
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: bold;
-        }
-        input[type="url"], input[type="file"] {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            box-sizing: border-box;
-        }
-        button {
-            background-color: #4CAF50;
-            color: white;
-            padding: 12px 20px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
-            width: 100%;
-        }
-        button:hover {
-            background-color: #45a049;
-        }
-        .tabs {
-            display: flex;
-            margin-bottom: 20px;
-            border-bottom: 1px solid #ddd;
-        }
-        .tab {
-            padding: 10px 20px;
-            cursor: pointer;
-            background: #f1f1f1;
-            border: none;
-            margin-right: 5px;
-            border-radius: 4px 4px 0 0;
-        }
-        .tab.active {
-            background: #4CAF50;
-            color: white;
-        }
-        .tab-content {
-            display: none;
-        }
-        .tab-content.active {
-            display: block;
-        }
-        .preview {
-            margin-top: 20px;
-            text-align: center;
-        }
-        #imagePreview {
-            max-width: 100%;
-            max-height: 500px;
-            margin-top: 10px;
-            display: none;
-        }
-        .loading {
-            display: none;
-            text-align: center;
-            margin: 20px 0;
-        }
-        .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #4CAF50;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div class="container">
-        <h1>Website to Mobile Frame</h1>
+      <h1>Website to Mobile Frame</h1>
 
-        <div class="tabs">
-            <button class="tab active" onclick="openTab('urlTab')">From URL</button>
-            <button class="tab" onclick="openTab('uploadTab')">Upload Image</button>
-        </div>
+      <div class="tabs">
+        <button class="tab active" onclick="openTab('urlTab')">From URL</button>
+        <button class="tab" onclick="openTab('uploadTab')">Upload Image</button>
+      </div>
 
-        <div id="urlTab" class="tab-content active">
-            <form id="urlForm">
-                <div class="form-group">
-                    <label for="websiteUrl">Website URL:</label>
-                    <input type="url" id="websiteUrl" name="url" placeholder="https://example.com" required>
-                </div>
-                <div class="form-group" style="display: flex; gap: 20px;">
-                    <div style="flex: 1;">
-                        <label for="width">Width (px)</label>
-                        <input type="number" id="width" name="width" value="1080" min="100" max="5000" required>
-                    </div>
-                    <div style="flex: 1;">
-                        <label for="height">Height (px)</label>
-                        <input type="number" id="height" name="height" value="2400" min="100" max="10000" required>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label for="device">Device Frame:</label>
-                    <select id="device" name="device" class="form-control">
-                        <option value="iphone">iPhone</option>
-                        <option value="android">Android</option>
-                    </select>
-                </div>
-                <button type="submit">Generate Mobile Frame</button>
-            </form>
-        </div>
-
-        <div id="uploadTab" class="tab-content">
-            <form id="uploadForm">
-                <div class="form-group">
-                    <label for="imageUpload">Upload Image:</label>
-                    <input type="file" id="imageUpload" name="image" accept="image/*" required>
-                </div>
-                <div class="form-group">
-                    <label for="uploadDevice">Device Frame:</label>
-                    <select id="uploadDevice" name="device" class="form-control">
-                        <option value="iphone">iPhone</option>
-                        <option value="android">Android</option>
-                    </select>
-                </div>
-                <button type="submit">Apply Mobile Frame</button>
-            </form>
-        </div>
-
-        <div class="loading" id="loading">
-            <div class="spinner"></div>
-            <p>Processing your request...</p>
-        </div>
-
-        <div class="preview" id="preview">
-            <h3>Preview</h3>
-            <img id="imagePreview" alt="Preview will appear here">
-            <div id="downloadContainer" style="margin-top: 20px; display: none;">
-                <a id="downloadLink" href="#" download="mobile-frame.png">
-                    <button>Download Image</button>
-                </a>
+      <div id="urlTab" class="tab-content active">
+        <form id="urlForm">
+          <div class="form-group">
+            <label for="websiteUrl">Website URL:</label>
+            <input
+              type="url"
+              id="websiteUrl"
+              name="url"
+              placeholder="https://example.com"
+              required
+            />
+          </div>
+          <div class="form-group" style="display: flex; gap: 20px">
+            <div style="flex: 1">
+              <label for="width">Width (px)</label>
+              <input
+                type="number"
+                id="width"
+                name="width"
+                value="1080"
+                min="100"
+                max="5000"
+                required
+              />
             </div>
+            <div style="flex: 1">
+              <label for="height">Height (px)</label>
+              <input
+                type="number"
+                id="height"
+                name="height"
+                value="2400"
+                min="100"
+                max="10000"
+                required
+              />
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="device">Device Frame:</label>
+            <select id="device" name="device" class="form-control">
+              <option value="iphone">iPhone</option>
+              <option value="android">Android</option>
+            </select>
+          </div>
+          <button type="submit">Generate Mobile Frame</button>
+        </form>
+      </div>
+
+      <div id="uploadTab" class="tab-content">
+        <form id="uploadForm">
+          <div class="form-group">
+            <label for="imageUpload">Upload Image:</label>
+            <input
+              type="file"
+              id="imageUpload"
+              name="image"
+              accept="image/*"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="uploadDevice">Device Frame:</label>
+            <select id="uploadDevice" name="device" class="form-control">
+              <option value="iphone">iPhone</option>
+              <option value="android">Android</option>
+            </select>
+          </div>
+          <button type="submit">Apply Mobile Frame</button>
+        </form>
+      </div>
+
+      <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <p>Processing your request...</p>
+      </div>
+
+      <div class="preview" id="preview">
+        <h3>Preview</h3>
+        <img id="imagePreview" alt="Preview will appear here" />
+        <div id="downloadContainer" style="margin-top: 20px; display: none">
+          <a id="downloadLink" href="#" download="mobile-frame.png">
+            <button>Download Image</button>
+          </a>
         </div>
+      </div>
     </div>
 
     <script>
-        function openTab(tabName) {
-            // Hide all tab contents
-            const tabContents = document.getElementsByClassName('tab-content');
-            for (let i = 0; i < tabContents.length; i++) {
-                tabContents[i].classList.remove('active');
-            }
-
-            // Remove active class from all tabs
-            const tabs = document.getElementsByClassName('tab');
-            for (let i = 0; i < tabs.length; i++) {
-                tabs[i].classList.remove('active');
-            }
-
-            // Show the current tab and add active class
-            document.getElementById(tabName).classList.add('active');
-            event.currentTarget.classList.add('active');
+      function openTab(tabName) {
+        // Hide all tab contents
+        const tabContents = document.getElementsByClassName("tab-content");
+        for (let i = 0; i < tabContents.length; i++) {
+          tabContents[i].classList.remove("active");
         }
 
-        // Handle URL form submission
-        document.getElementById('urlForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const url = document.getElementById('websiteUrl').value;
-            const device = document.getElementById('device').value;
-            const width = document.getElementById('width').value;
-            const height = document.getElementById('height').value;
+        // Remove active class from all tabs
+        const tabs = document.getElementsByClassName("tab");
+        for (let i = 0; i < tabs.length; i++) {
+          tabs[i].classList.remove("active");
+        }
 
-            showLoading();
+        // Show the current tab and add active class
+        document.getElementById(tabName).classList.add("active");
+        event.currentTarget.classList.add("active");
+      }
 
-            try {
-                const response = await fetch(`/screenshot?url=${encodeURIComponent(url)}&device=${device}&width=${width}&height=${height}`);
-                const result = await response.blob();
+      // Handle URL form submission
+      document
+        .getElementById("urlForm")
+        .addEventListener("submit", async function (e) {
+          e.preventDefault();
+          const url = document.getElementById("websiteUrl").value;
+          const device = document.getElementById("device").value;
+          const width = document.getElementById("width").value;
+          const height = document.getElementById("height").value;
 
-                if (response.ok) {
-                    const imageUrl = URL.createObjectURL(result);
-                    showPreview(imageUrl);
-                } else {
-                    throw new Error('Failed to generate screenshot');
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                alert('Error generating screenshot. Please try again.');
-            } finally {
-                hideLoading();
+          showLoading();
+
+          try {
+            const response = await fetch(
+              `/screenshot?url=${encodeURIComponent(
+                url
+              )}&device=${device}&width=${width}&height=${height}`
+            );
+            const result = await response.blob();
+
+            if (response.ok) {
+              const imageUrl = URL.createObjectURL(result);
+              showPreview(imageUrl);
+            } else {
+              throw new Error("Failed to generate screenshot");
             }
+          } catch (error) {
+            console.error("Error:", error);
+            alert("Error generating screenshot. Please try again.");
+          } finally {
+            hideLoading();
+          }
         });
 
-        // Handle image upload form submission
-        document.getElementById('uploadForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const fileInput = document.getElementById('imageUpload');
-            const file = fileInput.files[0];
-            const device = document.getElementById('uploadDevice').value;
+      // Handle image upload form submission
+      document
+        .getElementById("uploadForm")
+        .addEventListener("submit", async function (e) {
+          e.preventDefault();
+          const fileInput = document.getElementById("imageUpload");
+          const file = fileInput.files[0];
+          const device = document.getElementById("uploadDevice").value;
 
-            if (!file) return;
+          if (!file) return;
 
-            showLoading();
+          showLoading();
 
-            const formData = new FormData();
-            formData.append('image', file);
-            formData.append('device', device);
+          const formData = new FormData();
+          formData.append("image", file);
+          formData.append("device", device);
 
-            try {
-                const response = await fetch('/upload', {
-                    method: 'POST',
-                    body: formData
-                });
+          try {
+            const response = await fetch("/upload?device=" + device, {
+              method: "POST",
+              body: formData,
+            });
 
-                if (response.ok) {
-                    const result = await response.blob();
-                    const imageUrl = URL.createObjectURL(result);
-                    showPreview(imageUrl);
-                } else {
-                    throw new Error('Failed to process image');
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                alert('Error processing image. Please try again.');
-            } finally {
-                hideLoading();
+            if (response.ok) {
+              const result = await response.blob();
+              const imageUrl = URL.createObjectURL(result);
+              showPreview(imageUrl);
+            } else {
+              throw new Error("Failed to process image");
             }
+          } catch (error) {
+            console.error("Error:", error);
+            alert("Error processing image. Please try again.");
+          } finally {
+            hideLoading();
+          }
         });
 
-        // Show image preview when file is selected
-        document.getElementById('imageUpload').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(event) {
-                    const img = document.getElementById('imagePreview');
-                    img.src = event.target.result;
-                    img.style.display = 'block';
-                };
-                reader.readAsDataURL(file);
-            }
+      // Show image preview when file is selected
+      document
+        .getElementById("imageUpload")
+        .addEventListener("change", function (e) {
+          const file = e.target.files[0];
+          if (file) {
+            const reader = new FileReader();
+            reader.onload = function (event) {
+              const img = document.getElementById("imagePreview");
+              img.src = event.target.result;
+              img.style.display = "block";
+            };
+            reader.readAsDataURL(file);
+          }
         });
 
-        function showLoading() {
-            document.getElementById('loading').style.display = 'block';
-            document.getElementById('preview').style.display = 'none';
-        }
+      function showLoading() {
+        document.getElementById("loading").style.display = "block";
+        document.getElementById("preview").style.display = "none";
+      }
 
-        function hideLoading() {
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('preview').style.display = 'block';
-        }
+      function hideLoading() {
+        document.getElementById("loading").style.display = "none";
+        document.getElementById("preview").style.display = "block";
+      }
 
-        function showPreview(imageUrl) {
-            const previewImg = document.getElementById('imagePreview');
-            const downloadLink = document.getElementById('downloadLink');
+      function showPreview(imageUrl) {
+        const previewImg = document.getElementById("imagePreview");
+        const downloadLink = document.getElementById("downloadLink");
 
-            previewImg.src = imageUrl;
-            previewImg.style.display = 'block';
-            downloadLink.href = imageUrl;
-            document.getElementById('downloadContainer').style.display = 'block';
-        }
+        previewImg.src = imageUrl;
+        previewImg.style.display = "block";
+        downloadLink.href = imageUrl;
+        document.getElementById("downloadContainer").style.display = "block";
+      }
     </script>
-</body>
+  </body>
 </html>
