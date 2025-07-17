@@ -1,23 +1,20 @@
+import cors from "@fastify/cors";
+import fastifyMultipart from "@fastify/multipart";
+import fastifyStatic from "@fastify/static";
+import fastifyView from "@fastify/view";
+import ejs from "ejs";
 import Fastify, {
   type FastifyInstance,
   type FastifyReply,
   type FastifyRequest,
-} from 'fastify';
-import cors from '@fastify/cors';
+} from "fastify";
+import { fileURLToPath } from "node:url";
+import path from "path";
+import { CONFIG } from "./utils/config";
 import {
   processScreenshot,
   processWebsiteScreenshot,
-  takeScreenshot2_test,
-} from './utils/screenshot';
-import { log } from './utils/logger';
-import fs from 'fs-extra';
-import { CONFIG } from './utils/config';
-import fastifyView from '@fastify/view';
-import { fileURLToPath } from 'node:url';
-import ejs from 'ejs';
-import path from 'path';
-import fastifyStatic from '@fastify/static';
-import fastifyMultipart from '@fastify/multipart';
+} from "./utils/screenshot";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -34,13 +31,13 @@ await app.register(fastifyView, {
   engine: {
     ejs: ejs,
   },
-  root: path.join(__dirname, '../views'),
-  viewExt: 'ejs',
+  root: path.join(__dirname, "../views"),
+  viewExt: "ejs",
 });
 
 await app.register(fastifyStatic, {
-  root: path.join(__dirname, '../public'),
-  prefix: '/public/',
+  root: path.join(__dirname, "../public"),
+  prefix: "/public/",
 });
 
 await app.register(fastifyMultipart, {
@@ -50,15 +47,15 @@ await app.register(fastifyMultipart, {
   },
 });
 
-app.get('/', async (request: FastifyRequest, reply: FastifyReply) => {
-  return reply.view('index.ejs');
+app.get("/", async (request: FastifyRequest, reply: FastifyReply) => {
+  return reply.view("index.ejs");
 });
 
-app.get('/health', async (request: FastifyRequest, reply: FastifyReply) => {
-  return { status: 'ok' };
+app.get("/health", async (request: FastifyRequest, reply: FastifyReply) => {
+  return { status: "ok" };
 });
 
-app.get('/screenshot', async (request: FastifyRequest, reply: FastifyReply) => {
+app.get("/screenshot", async (request: FastifyRequest, reply: FastifyReply) => {
   const query = request.query as {
     url: string;
     device?: string;
@@ -66,14 +63,14 @@ app.get('/screenshot', async (request: FastifyRequest, reply: FastifyReply) => {
     height?: string;
   };
 
-  const { url, device = 'iphone', width, height } = query;
-  request.log.info('Processing URL: ' + url);
+  const { url, device = "iphone", width, height } = query;
+  request.log.info("Processing URL: " + url);
 
   if (!url) {
     return reply.status(400).send({
-      error: 'URL parameter is required',
+      error: "URL parameter is required",
       example:
-        '/screenshot?url=example.com&device=iphone&width=1080&height=2400',
+        "/screenshot?url=example.com&device=iphone&width=1080&height=2400",
     });
   }
 
@@ -86,8 +83,8 @@ app.get('/screenshot', async (request: FastifyRequest, reply: FastifyReply) => {
     new URL(processedUrl);
   } catch (error) {
     return reply.status(400).send({
-      error: 'Invalid URL',
-      message: 'Please provide a valid URL with or without http:// or https://',
+      error: "Invalid URL",
+      message: "Please provide a valid URL with or without http:// or https://",
       providedUrl: url,
     });
   }
@@ -100,32 +97,34 @@ app.get('/screenshot', async (request: FastifyRequest, reply: FastifyReply) => {
         width: width ? Number(width) : undefined,
         height: height ? Number(height) : undefined,
       },
-      request.log,
+      request.log
     );
 
-    const fileName = `${new URL(processedUrl).hostname}-${device}-${Date.now()}.png`;
+    const fileName = `${
+      new URL(processedUrl).hostname
+    }-${device}-${Date.now()}.png`;
 
     reply
-      .header('Content-Type', 'image/png')
-      .header('Content-Disposition', `inline; filename="${fileName}"`)
+      .header("Content-Type", "image/png")
+      .header("Content-Disposition", `inline; filename="${fileName}"`)
       .send(imageBuffer);
   } catch (error) {
-    request.log.error('Error taking screenshot:', error);
+    request.log.error("Error taking screenshot:", error);
     return reply.status(500).send({
-      error: 'Failed to take screenshot',
-      message: error instanceof Error ? error.message : 'Unknown error',
+      error: "Failed to take screenshot",
+      message: error instanceof Error ? error.message : "Unknown error",
     });
   }
 });
 
-app.post('/upload', async (request: FastifyRequest, reply: FastifyReply) => {
+app.post("/upload", async (request: FastifyRequest, reply: FastifyReply) => {
   try {
     const data = await (request as any).file();
     if (!data) {
-      return reply.status(400).send({ error: 'No file uploaded' });
+      return reply.status(400).send({ error: "No file uploaded" });
     }
 
-    const device = data.fields.device?.value || 'iphone';
+    const device = data.fields.device?.value || "iphone";
     const buffer = await data.toBuffer();
 
     const processedImage = await processScreenshot(
@@ -135,20 +134,20 @@ app.post('/upload', async (request: FastifyRequest, reply: FastifyReply) => {
         width: CONFIG.targetDimensions.width,
         height: CONFIG.targetDimensions.height,
       },
-      request.log,
+      request.log
     );
 
     const fileName = `framed-${device}-${Date.now()}.png`;
 
     reply
-      .header('Content-Type', 'image/png')
-      .header('Content-Disposition', `inline; filename="${fileName}"`)
+      .header("Content-Type", "image/png")
+      .header("Content-Disposition", `inline; filename="${fileName}"`)
       .send(processedImage);
   } catch (error) {
-    request.log.error('Error processing uploaded image:', error);
+    request.log.error("Error processing uploaded image:", error);
     return reply.status(500).send({
-      error: 'Failed to process image',
-      message: error instanceof Error ? error.message : 'Unknown error',
+      error: "Failed to process image",
+      message: error instanceof Error ? error.message : "Unknown error",
     });
   }
 });
@@ -156,10 +155,10 @@ app.post('/upload', async (request: FastifyRequest, reply: FastifyReply) => {
 const start = async () => {
   try {
     const PORT = Number(process.env.PORT) || 3000;
-    await app.listen({ port: PORT, host: '0.0.0.0' });
+    await app.listen({ port: PORT, host: "0.0.0.0" });
     console.log(`Server is running on http://localhost:${PORT}`);
     console.log(
-      `Screenshot endpoint: http://localhost:${PORT}/screenshot?url=example.com`,
+      `Screenshot endpoint: http://localhost:${PORT}/screenshot?url=example.com`
     );
   } catch (err) {
     app.log.error(err);
@@ -167,8 +166,8 @@ const start = async () => {
   }
 };
 
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+process.on("unhandledRejection", (reason, promise) => {
+  console.error("Unhandled Rejection at:", promise, "reason:", reason);
 });
 
 start();
