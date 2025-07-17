@@ -124,7 +124,7 @@ app.post("/upload", async (request: FastifyRequest, reply: FastifyReply) => {
       return reply.status(400).send({ error: "No file uploaded" });
     }
 
-    const device = data.fields.device?.value || "iphone";
+    const device = (request.query as { device?: string })?.device || "iphone";
     const buffer = await data.toBuffer();
 
     const processedImage = await processScreenshot(
